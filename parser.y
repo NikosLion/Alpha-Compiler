@@ -379,7 +379,8 @@ call:		lvalue callsuffix {
             fprintf(GOUT,"Error at line %d: Invalid call\n",yylineno);
             exit(0);
           }
-         //delete_call_args(scope,call_args_counter);
+        // delete_call_args(scope,call_args_counter);
+
           call_args_counter=0;
         }
     |		L_PARENTHESIS funcdef R_PARENTHESIS L_PARENTHESIS elist R_PARENTHESIS	{
