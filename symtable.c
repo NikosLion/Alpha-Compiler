@@ -34,6 +34,8 @@ void print_symTable(){
 
     SymbolTableEntry *fasi=ScopeListHead;
     SymbolTableEntry *fasi2=ScopeListHead;
+    struct FuncArg *temp_args;
+
     printf("    \n");
 
     while(fasi!=NULL){
@@ -42,6 +44,17 @@ void print_symTable(){
         fasi2=fasi;
         while(fasi2!=NULL){
             printf("Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
+           /*
+
+           temp_args=fasi2->args;
+            if((fasi2->type==4) && (temp_args!=NULL)){
+              while(temp_args!=NULL){
+                printf("Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",temp_args->name,temp_args->scope,temp_args->line,temp_args->type);
+                temp_args=temp_args->next;
+              }
+            }
+
+            */
             fasi2=fasi2->scope_next;
         }
         printf("\n");
@@ -328,21 +341,22 @@ void insert_funcArg(int scope,int line,char *name){
 int lookup_funcArgs(int scope,char *name){
 
     SymbolTableEntry *temp=ScopeListHead;
-    FuncArg *func_temp=temp->args;
+    FuncArg *func_temp;
 
     while((temp!=NULL) && (temp->scope != scope)){
         temp=temp->scope_list_next;
     }
 
-	//koitame mono to prwto stoixeio tis scope_list
-	//giati mas endiaferoun mono ta formals ths synarthshs
-	//pou eisixthe teleutaia (h insert ginete stin arxh tis listas).
-    while(func_temp!=NULL){
-
-        if(strcmp(name,func_temp->name)==0){
-            return 1;
+    if(temp!=NULL){
+      func_temp=temp->args;
+      if(func_temp!=NULL){
+        while(func_temp!=NULL){
+          if(strcmp(name,func_temp->name)==0){
+              return 1;
+          }
+          func_temp=func_temp->next;
         }
-        func_temp=func_temp->next;
+      }
     }
     return 0;							//den to vrhke, ara proxwraei h insert
 }

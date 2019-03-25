@@ -112,8 +112,8 @@ whitespace		[' ' \t\n\r\f]
 <SC_COMMENT>"*"+[^*/]*           ;
 <SC_COMMENT>"/"+"*"	comment_nesting++;
 <SC_COMMENT>"*"+"/" {
-			
-			if(comment_nesting==0) {	
+
+			if(comment_nesting==0) {
 				BEGIN(INITIAL);
 				return 0;
 			}
@@ -123,8 +123,8 @@ whitespace		[' ' \t\n\r\f]
 				BEGIN(SC_COMMENT);
 			}
 		}
-		
-		
+
+
 <SC_COMMENT><<EOF>> {
 			{fprintf(stderr,"Error in line :%d: comment left open\n",yylineno);exit(EXIT_FAILURE);}
                         BEGIN(INITIAL);

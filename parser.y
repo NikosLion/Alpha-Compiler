@@ -352,7 +352,7 @@ lvalue:		IDENTIFIER {
 				$$=temp_maloc;
 				break;
 			}
-			else if(lookup_symTable($2,scope,4)){
+			else if(lookup_symTable($2,0,4)){
 				temp_maloc->name=$2;
 				temp_maloc->type=4;
 				$$=temp_maloc;
@@ -547,14 +547,8 @@ idlist:		IDENTIFIER {
 					fprintf(GOUT,"Error at line %d: Invalid argument name,colission with library function: %s\n", yylineno,$1);
 					exit(0);
 				}
-
-				int found = lookup_funcArgs(scope+1,$1);
-
-				if(found == -1){
-					fprintf(GOUT,"Error at line %d: Invalid formal name,colission with library function: \n", yylineno);
-					exit(0);
-				}
-				else if(found == 1){
+				int found = lookup_funcArgs(scope,$1);
+				if(found ==1){
 					fprintf(GOUT,"Error at line %d: Invalid formal name, identifier: %s already exists as function argument.\n", yylineno,$1);
 					exit(0);
 				}
@@ -572,12 +566,10 @@ idlist:		IDENTIFIER {
 					fprintf(GOUT,"Error at line %d: Invalid argument name,colission with library function: %s\n", yylineno,$3);
 					exit(0);
 				}
-				int found = lookup_funcArgs(scope+1,$3); //paizoume me to <type> tou idlist mesw tou struct
-				if(found == -1){
-					fprintf(GOUT,"Error at line %d: Invalid formal name,colission with library function: %s\n", yylineno,$3);
-					exit(0);
-				}
-				else if(found == 1){
+
+				int found = lookup_funcArgs(scope,$3); //paizoume me to <type> tou idlist mesw tou struct
+
+			  if(found ==1){
 					fprintf(GOUT,"Error at line %d: Invalid formal name, identifier: %s already exists as function argument.\n", yylineno,$3);
 					exit(0);
 				}
