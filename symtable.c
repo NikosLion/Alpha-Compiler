@@ -5,15 +5,14 @@
 
 
 
-
 struct SymbolTableEntry *ScopeListHead=NULL;
 struct SymbolTableEntry *newEntry=NULL;
 struct FuncArg *newArg=NULL;
 
-//struct s_expr *fasi=NULL;
-//struct s_expr *fasi2=NULL;
 
-
+/*Arxikopoiei ton symbol table me table
+  me ta library functions.
+*/
 void init_symTable(){
     insert_SymTable("print",0,0,5);
     insert_SymTable("input",0,0,5);
@@ -28,10 +27,8 @@ void init_symTable(){
     insert_SymTable("sin",0,0,5);
 }
 
-/*Typwnei ta functions mazi me ta formals tous
-  dhladh ta formals typwnontai sto scope tis sunarthshs
-  pou anhkoun anti gia ena scope eswterikotera.Ta insert
-  gia ta formals ginontai sto swsto scope.
+/*Typwnei ta periexomena tou symbol table
+  ana scope.
 */
 void print_symTable(){
 
@@ -53,7 +50,9 @@ void print_symTable(){
     printf("    \n");
 }
 
-
+/*Apenergopoiei ta symvola sto scope pou
+  dinetai mesw tou isActive field.
+*/
 void HideVar(int scope){
     SymbolTableEntry *dif_scope_temp=ScopeListHead;
     SymbolTableEntry *dif_scope_prev=ScopeListHead;
@@ -81,7 +80,10 @@ void HideVar(int scope){
 
 
 
-
+/*Eisagwgh neou symvolou ston symbol table me
+  parametrous to onoma, to scope, th grammh pou
+  vrethike to symvolo kai ton typo tou.
+*/
 void insert_SymTable(char *name,int scope,int line,int enu){
 
     newEntry=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
@@ -139,13 +141,15 @@ void insert_SymTable(char *name,int scope,int line,int enu){
 }
 
 
-/*return 1 if found else return 0*/
+/*Lookup sto scope pou dinetai me vash to onoma
+  kai ton typo tou symvolou pou psaxnoume.Epistrefei
+  1 an vrethei to symvolo, 0 an oxi.
+*/
 int lookup_symTable(char *name,int scope,int type){
 
     SymbolTableEntry *find_scope=ScopeListHead;
     SymbolTableEntry *temp=ScopeListHead;
 
-	//printf("111111111\n");
     while((find_scope!=NULL)&&(find_scope->scope<scope)){
         find_scope=find_scope->scope_list_next;
     }
@@ -156,7 +160,7 @@ int lookup_symTable(char *name,int scope,int type){
     while(temp!=NULL){
         if(strcmp(temp->name,name)==0){
 
-            if(/*(temp->isActive==1) &&*/ (temp->type==type)){
+            if(temp->type==type){
                 return 1;
             }
         }
@@ -165,6 +169,12 @@ int lookup_symTable(char *name,int scope,int type){
     return 0;
 }
 
+/*Lookup sto scope pou dinetai gia active
+  symvola.An vrethei to symvolo epistrefei to
+  scope pou vrethike.An den uparxei to scope
+  pou mas endiaferei epistrefei -2.An to symvolo
+  den vrethei epistrefei -1.
+*/
 int lookup_symTable2(char *name,int scope,int type){
 
     SymbolTableEntry *find_scope=ScopeListHead;
@@ -192,7 +202,9 @@ int lookup_symTable2(char *name,int scope,int type){
     return -2;
 }
 
-/*Tsekarei an uparxei function sto scope pou tis dineis*/
+/*Elegxei an to teleutaio symvolo pou egine eisagwgh
+  sto scope pou dinetai einai synarthsh.
+*/
 int isUserFunc(int scope){
     SymbolTableEntry *temp=ScopeListHead;
     while((temp!=NULL)&&(temp->scope<scope)){
@@ -208,6 +220,11 @@ int isUserFunc(int scope){
     }
 }
 
+/*Elegxei an to onoma pou dinetai sto
+  sygkekrimeno scope antistoixei se onoma
+  synarthshs.Ean nai epistrefei 1, diaforetika
+  epistrefei 0.
+*/
 int checkFuncName(char *name,int scope){
     SymbolTableEntry *temp=ScopeListHead;
     SymbolTableEntry *side_temp=temp;
@@ -228,8 +245,9 @@ int checkFuncName(char *name,int scope){
     return 0;
 }
 
-/*Returns 1 if there is a colission between the argument "name"
-  and a libfunc name, otherwise returns 0.
+/*Epistrefei 1 ean to onoma pou dinetai antistoixei
+  se onoma synarthshs vivliothikis, diaforetika
+  epistrefei 0.
 */
 int look_lib_func(char *name){
     int lib_name=0;
@@ -269,8 +287,9 @@ int look_lib_func(char *name){
     return lib_name;
 }
 
-
-
+/*Eisagwgh neou symvolou typou formal argument
+  ws neou komvou sth lista symvolwn enos function.
+*/
 void insert_funcArg(int scope,int line,char *name){
 
     newArg=(struct FuncArg*)malloc(sizeof(struct FuncArg));
@@ -301,9 +320,10 @@ void insert_funcArg(int scope,int line,char *name){
     return;
 }
 
-/*Returns -1 if "name" shadows a library function,
-  1 if we find a formal argument with the same name
-  and 0 if we don't find anything.
+/*Epistrefei -1 an to "name" sygkrouetai
+  me kapoio apo ta library function,
+  1 an vrethei formal argument me to idio onoma
+  kai 0 an den vrethei tipota.
 */
 int lookup_funcArgs(int scope,char *name){
 
@@ -327,6 +347,9 @@ int lookup_funcArgs(int scope,char *name){
     return 0;							//den to vrhke, ara proxwraei h insert
 }
 
+/*Diagrafei ta symvola pou eisixthisan ston symbol table
+  kata tin klhsh mias synarthshs.
+*/
 int delete_call_args(int scope,int call_args_counter){
     SymbolTableEntry *temp=ScopeListHead;
     SymbolTableEntry *prev=NULL;
@@ -375,6 +398,12 @@ int delete_call_args(int scope,int call_args_counter){
     }
 }
 
+/*Allazei to onoma tou symvolou "name" se
+  "new_name". Kaleitai otan to deksiotero
+  expr se stoixeio indexedelem einai typou
+  synarthshs, wste na mporoume na anaferthoume
+  se auto mesw tou aristerou expr.
+*/
 int change_name(char *name,char *new_name,int scope){
   SymbolTableEntry *find_scope=ScopeListHead;
   SymbolTableEntry *temp=ScopeListHead;
@@ -395,7 +424,13 @@ int change_name(char *name,char *new_name,int scope){
   return 0;
 }
 
-
+/*Allazei ton typo tou symvolou "name" se
+  "userfunc". Kaleitai otan to deksio melos
+  enos assignexpr einai typou synarthshs wste
+  na epitrapoun energeies "call" sto aristero
+  melos se epomenes entoles ston kwdika tou
+  xristi.
+*/
 int change_type(char *name){
   SymbolTableEntry *find_scope=ScopeListHead;
   SymbolTableEntry *temp=ScopeListHead;

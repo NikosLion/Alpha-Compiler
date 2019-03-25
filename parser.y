@@ -33,7 +33,6 @@ void yyerror(const char *s);
   char* stringValue;
   int intValue;
   double realValue;
-  //struct s_expr *expr_t;
   struct SymbolTableEntry *exprNode;
   struct FuncArg *argument_t;
 };
@@ -45,7 +44,7 @@ void yyerror(const char *s);
 
 
 %type<exprNode> lvalue funcdef const assignexpr expr term primary stmt
-%type<argument_t> idlist //doulevei
+%type<argument_t> idlist
 %type<realValue>  arithmeticop
 %type<stringValue> ifstmt whilestmt forstmt returnstmt block  ifprefix
 %type<intValue> booleanop relativeop
