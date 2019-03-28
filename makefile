@@ -7,5 +7,4 @@ clean:
 	rm parser.h
 	rm parser.c
 	rm scanner.c
-	rm Parser
-	
+	rm Parse
