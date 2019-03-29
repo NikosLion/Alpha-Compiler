@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "symtable.h"
+#include "quads.h"
 
 extern int yylineno;
 extern char *yytext;
@@ -17,6 +18,8 @@ int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
 char *f_name="_F";
+
+
 
 char* concat(const char *s1, const char *s2);
 
@@ -456,10 +459,12 @@ funcdef:	FUNCTION IDENTIFIER {
 		   else{
 				   inside_function++;
 			     insert_SymTable($2,scope,yylineno,4);
+           enterScopeSpace();
 		   }
-		   } L_PARENTHESIS idlist R_PARENTHESIS block {
+    } L_PARENTHESIS idlist R_PARENTHESIS {enterScopeSpace();} block {
 
 				fprintf(GOUT,"funcdef: function IDENTIFIER ( idlist ) block\n");
+
 
         struct SymbolTableEntry *new_func;
         new_func=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
@@ -467,6 +472,8 @@ funcdef:	FUNCTION IDENTIFIER {
         new_func->type=4;
         $$=new_func;
 				inside_function--;
+        exitScopeSpace();
+        exitScopeSpace();
 		}
 		|	FUNCTION {
 				inside_function++;
@@ -479,17 +486,19 @@ funcdef:	FUNCTION IDENTIFIER {
 				func_name++;
 				//Insert new function in SymbolTable
 				insert_SymTable(f_name,scope,yylineno,4);
+        enterScopeSpace();
 
-		}	L_PARENTHESIS idlist R_PARENTHESIS block {
+		}	L_PARENTHESIS idlist R_PARENTHESIS {enterScopeSpace();}block {
 
 				fprintf(GOUT,"funcdef: function ( idlist )\n");
-
         struct SymbolTableEntry *new_func;
         new_func=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         new_func->name= f_name;
         new_func->type=4;
         $$=new_func;
         inside_function--;
+        exitScopeSpace();
+        exitScopeSpace();
 	}
 	   ;
 
@@ -647,6 +656,13 @@ char* concat(const char *s1, const char *s2)
 
 int main(int argc, char **argv){
   //init_symTable();
+
+  programVarOffset=0;
+  functionLocalOffset=0;
+  formalArgOffset=0;
+  scopeSpaceCounter=1;
+
+
   FILE *ifp, *ofp;
   ifp = fopen(argv[1], "r");
 
