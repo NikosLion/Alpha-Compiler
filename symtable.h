@@ -3,6 +3,10 @@ enum SymbolType{
     global=1 , local=2 , formal=3, userfunc=4 , libfunc=5
 };
 
+enum scopespace_t{
+  programvar, functionlocal, formalarg
+};
+
 
 typedef struct SymbolTableEntry{
     int isActive;
@@ -10,6 +14,8 @@ typedef struct SymbolTableEntry{
     int scope;
     int line;
     enum SymbolType type;
+    enum scopespace_t space;
+    unsigned offset;
     struct FuncArg *args;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
