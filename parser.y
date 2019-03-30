@@ -4,6 +4,7 @@
 #include <string.h>
 #include "symtable.h"
 #include "quads.h"
+#include "Stack.h"
 
 extern int yylineno;
 extern char *yytext;
@@ -222,14 +223,14 @@ primary:	lvalue{
 
 lvalue:		IDENTIFIER {
 
-            fprintf(GOUT,"lvalue: IDENTIFIER\n");
+      fprintf(GOUT,"lvalue: IDENTIFIER\n");
 			int tmp_scope = scope;
 			int found = 0;
 			int type=0;
 			int found_scope=-1;
 
-            struct SymbolTableEntry *temp_maloc;
-            temp_maloc=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+      struct SymbolTableEntry *temp_maloc;
+      temp_maloc=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
 			//arxika check an einai libfunc
 			if(look_lib_func($1)){
@@ -279,9 +280,9 @@ lvalue:		IDENTIFIER {
     			}
     			else if((found_scope=lookup_symTable2($1,tmp_scope,4))!=-2){
     				type=4;
-					temp_maloc->name=$1;
-					temp_maloc->type=type;
-					$$=temp_maloc;
+					  temp_maloc->name=$1;
+					  temp_maloc->type=type;
+					  $$=temp_maloc;
     				break;
     			}
 				tmp_scope--;
@@ -290,15 +291,17 @@ lvalue:		IDENTIFIER {
 			if(type==0){
     			if(scope == 0){
     				insert_SymTable($1,scope,yylineno,1);
-					temp_maloc->name=$1;
-					temp_maloc->type=1;
-					$$=temp_maloc;
+            incCurrScopeOffset();
+					  temp_maloc->name=$1;
+					  temp_maloc->type=1;
+					  $$=temp_maloc;
     			}
     			else{
     				insert_SymTable($1,scope,yylineno,2);
-					temp_maloc->name=$1;
-					temp_maloc->type=2;
-					$$=temp_maloc;
+            incCurrScopeOffset();
+					  temp_maloc->name=$1;
+					  temp_maloc->type=2;
+					  $$=temp_maloc;
     			}
     		}
 	  }
@@ -334,12 +337,14 @@ lvalue:		IDENTIFIER {
 					temp_maloc->type=1;
 					$$=temp_maloc;
 					insert_SymTable($2,0,yylineno,1);
+          incCurrScopeOffset();
 				}
 				else{
 					temp_maloc->name=$2;
 					temp_maloc->type=2;
 					$$=temp_maloc;
 					insert_SymTable($2,scope,yylineno,2);
+          incCurrScopeOffset();
 				}
 			}
 	  }
@@ -459,9 +464,11 @@ funcdef:	FUNCTION IDENTIFIER {
 		   else{
 				   inside_function++;
 			     insert_SymTable($2,scope,yylineno,4);
+           incCurrScopeOffset();
+           push(currScopeOffset());
            enterScopeSpace();
 		   }
-    } L_PARENTHESIS idlist R_PARENTHESIS {enterScopeSpace();} block {
+    } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
 
 				fprintf(GOUT,"funcdef: function IDENTIFIER ( idlist ) block\n");
 
@@ -472,8 +479,14 @@ funcdef:	FUNCTION IDENTIFIER {
         new_func->type=4;
         $$=new_func;
 				inside_function--;
+        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
         exitScopeSpace();
+        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
         exitScopeSpace();
+        //mia pop() gia ta locals, mia gia ta idlist
+        pop();
+        restoreCurScopeOffset(pop());
+        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
 		}
 		|	FUNCTION {
 				inside_function++;
@@ -486,9 +499,11 @@ funcdef:	FUNCTION IDENTIFIER {
 				func_name++;
 				//Insert new function in SymbolTable
 				insert_SymTable(f_name,scope,yylineno,4);
+        incCurrScopeOffset();
+        push(currScopeOffset());
         enterScopeSpace();
 
-		}	L_PARENTHESIS idlist R_PARENTHESIS {enterScopeSpace();}block {
+		}	L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();}block {
 
 				fprintf(GOUT,"funcdef: function ( idlist )\n");
         struct SymbolTableEntry *new_func;
@@ -499,6 +514,9 @@ funcdef:	FUNCTION IDENTIFIER {
         inside_function--;
         exitScopeSpace();
         exitScopeSpace();
+        //mia pop() gia ta locals, mia gia ta idlist
+        pop();
+        restoreCurScopeOffset(pop());
 	}
 	   ;
 
@@ -562,10 +580,9 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-
 					insert_funcArg(scope+1,yylineno,$1);
 					insert_SymTable($1,scope+1,yylineno,3);
-
+          incCurrScopeOffset();
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -585,6 +602,7 @@ idlist:		IDENTIFIER {
 				else{
 					insert_funcArg(scope+1,yylineno,$3);
 					insert_SymTable($3,scope+1,yylineno,3);
+          incCurrScopeOffset();
 				}
 			}
 	  |			{fprintf(GOUT,"idlist: \n");}

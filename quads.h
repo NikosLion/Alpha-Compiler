@@ -72,5 +72,6 @@ void expand(void);
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
 void incCurrScopeOffset(void);
+void restoreCurScopeOffset(unsigned old_offset);
 void enterScopeSpace(void);
 void exitScopeSpace(void);
