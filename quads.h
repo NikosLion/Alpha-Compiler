@@ -1,4 +1,6 @@
 
+#include "symtable.h"
+
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (total*sizeof(quad))
 #define NEW_SIZE (EXPAND_SIZE*sizeof(quad)+CURR_SIZE)
@@ -28,26 +30,11 @@ enum expr_t{
   libraryfunc_e,    newtable_e,     nil_e
 };
 
-enum scopespace_t{
-  programvar, functionlocal, formalarg
-};
 
-enum symbol_t{
-  var_s, programfunc_s, libraryfunc_s
-};
-
-typedef struct symbol{
-  enum symbol_t type;
-  enum scopespace_t space;
-  char* name;
-  unsigned offset;
-  unsigned scope;
-  unsigned line;
-}symbol;
 
 typedef struct expr{
   enum expr_t type;
-  symbol* sym;
+  SymbolTableEntry* sym;
   struct expr* index;
   double numConst;
   char* strConst;
@@ -72,5 +59,6 @@ void expand(void);
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
 void incCurrScopeOffset(void);
+void restoreCurScopeOffset(unsigned old_offset);
 void enterScopeSpace(void);
 void exitScopeSpace(void);

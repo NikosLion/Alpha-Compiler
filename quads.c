@@ -73,3 +73,12 @@ void exitScopeSpace(void){
   assert(scopeSpaceCounter>1);
   --scopeSpaceCounter;
 }
+
+/////////////////////////////////////
+void restoreCurScopeOffset(unsigned old_offset){
+  switch (currScopeSpace()){
+    case programvar : programVarOffset=old_offset; break;
+    case functionlocal : functionLocalOffset=old_offset; break;
+    case formalarg : formalArgOffset=old_offset; break;
+  }
+}
