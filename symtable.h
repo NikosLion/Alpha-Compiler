@@ -19,12 +19,6 @@ typedef struct SymbolTableEntry{
     struct FuncArg *args;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
-    union value{
-      char* stringValue;
-      int intValue;
-      double realValue;
-      int boolean;    //true 1,false 0,null -1
-    }value;
 }SymbolTableEntry;
 
 
@@ -45,7 +39,7 @@ int change_name(char *name,char *new_name,int scope);
 int change_type(char *name);
 
 void HideVar(int scope);
-void insert_SymTable(char *name,int scope,int line,int enu);
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space);
 void print_symTable();
 void init_symTable();
 int lookup_symTable(char *name,int scope,int type);         //search_cond 0 for same scope lookup,1 for global lookup
