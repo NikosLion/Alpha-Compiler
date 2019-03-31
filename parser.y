@@ -140,14 +140,19 @@ booleanop:		expr AND expr		{fprintf(GOUT,"op: expr && expr\n");}
 		 ;
 
 term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
-	|		MINUS expr %prec UMINUS				{fprintf(GOUT,"term: -expr\n");}
-	|		NOT expr							{fprintf(GOUT,"term: ! expr\n");}
+	|		MINUS expr %prec UMINUS	{fprintf(GOUT,"term: -expr\n");}
+	|		NOT expr {fprintf(GOUT,"term: ! expr\n");}
 	|		INCR lvalue{
         fprintf(GOUT,"term: ++lvalue\n");
         if($2->type==programfunc_e || $2->type==libraryfunc_e){
           fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->sym->name);
           exit(0);
         }
+        struct expr *temp_const;
+        temp_const=(struct expr*)malloc(sizeof(struct expr));
+        temp_const->type=constnum_e;
+        temp_const->value.intValue=1;
+        emit(add,temp_const,$2,$2,0,yylineno);
       }
 	|		lvalue INCR	{
         fprintf(GOUT,"term: lvalue++\n");
@@ -155,6 +160,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
           fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->sym->name);
           exit(0);
         }
+        struct expr *temp_const;
+        temp_const=(struct expr*)malloc(sizeof(struct expr));
+        temp_const->type=constnum_e;
+        temp_const->value.intValue=1;
+        emit(add,$1,temp_const,$1,0,yylineno);
       }
 	|		DECR lvalue{
         fprintf(GOUT,"term: --lvalue\n");
@@ -162,6 +172,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
           fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->sym->name);
           exit(0);
         }
+        struct expr *temp_const;
+        temp_const=(struct expr*)malloc(sizeof(struct expr));
+        temp_const->type=constnum_e;
+        temp_const->value.intValue=1;
+        emit(sub,temp_const,$2,$2,0,yylineno);
       }
 	|		lvalue DECR{
         fprintf(GOUT,"term: lvalue--\n");
@@ -169,6 +184,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
           fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->sym->name);
           exit(0);
         }
+        struct expr *temp_const;
+        temp_const=(struct expr*)malloc(sizeof(struct expr));
+        temp_const->type=constnum_e;
+        temp_const->value.intValue=1;
+        emit(sub,$1,temp_const,$1,0,yylineno);
       }
 	|		primary{
         fprintf(GOUT,"term: primary\n");
@@ -195,6 +215,7 @@ assignexpr:	lvalue ASSIGN expr{
                 change_type($1->sym->name);
                 $$=$1;
               }
+              emit(assign,$3,NULL,$1,0,yylineno);
           }
 		  ;
 
@@ -298,19 +319,28 @@ lvalue:		IDENTIFIER {
 			//an dn vrethei tipota kanoume insert sto trexon scope
 			if(type==0){
     			if(scope == 0){
-    				insert_SymTable($1,scope,yylineno,1);
             incCurrScopeOffset();
-					  temp_maloc->sym->name=$1;
-					  temp_maloc->sym->type=1;
+            temp_maloc->sym->offset=currScopeOffset();
+            temp_maloc->sym->space=currScopeSpace();
+            temp_maloc->sym->name=$1;
+            temp_maloc->sym->type=1;
+
+    				insert_SymTable($1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+
             temp_maloc->type=var_e;
+
 					  $$=temp_maloc;
 
     			}
     			else{
-    				insert_SymTable($1,scope,yylineno,2);
             incCurrScopeOffset();
-					  temp_maloc->sym->name=$1;
+            temp_maloc->sym->offset=currScopeOffset();
+            temp_maloc->sym->space=currScopeSpace();
+            temp_maloc->sym->name=$1;
 					  temp_maloc->sym->type=2;
+
+    				insert_SymTable($1,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+
             temp_maloc->type=var_e;
 					  $$=temp_maloc;
     			}
@@ -356,17 +386,25 @@ lvalue:		IDENTIFIER {
 				  temp_maloc->sym->name=$2;
 					temp_maloc->sym->type=1;
           temp_maloc->type=var_e;
-					$$=temp_maloc;
-					insert_SymTable($2,0,yylineno,1);
+
           incCurrScopeOffset();
+          temp_maloc->sym->offset=currScopeOffset();
+          temp_maloc->sym->space=currScopeSpace();
+
+          $$=temp_maloc;
+					insert_SymTable($2,0,yylineno,1,currScopeOffset(),currScopeSpace());
+
 				}
 				else{
 					temp_maloc->sym->name=$2;
 					temp_maloc->sym->type=2;
           temp_maloc->type=var_e;
-					$$=temp_maloc;
-					insert_SymTable($2,scope,yylineno,2);
           incCurrScopeOffset();
+          temp_maloc->sym->offset=currScopeOffset();
+          temp_maloc->sym->space=currScopeSpace();
+					$$=temp_maloc;
+					insert_SymTable($2,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+
 				}
 			}
 	  }
@@ -492,8 +530,9 @@ funcdef:	FUNCTION IDENTIFIER {
 		   //If nothing found, then insert new function in SymbolTable
 		   else{
 				   inside_function++;
-			     insert_SymTable($2,scope,yylineno,4);
+
            incCurrScopeOffset();
+
            push(currScopeOffset());
            enterScopeSpace();
 		   }
@@ -501,24 +540,29 @@ funcdef:	FUNCTION IDENTIFIER {
 
 				fprintf(GOUT,"funcdef: function IDENTIFIER ( idlist ) block\n");
 
-
         struct expr *new_func;
         new_func=(struct expr*)malloc(sizeof(struct expr));
 
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
-        new_func->sym=sym;
-
-        new_func->sym->name=$2;
-        new_func->type=programfunc_e;
-        $$=new_func;
-				inside_function--;
-        exitScopeSpace();
-        exitScopeSpace();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
         restoreCurScopeOffset(pop());
+        exitScopeSpace();
+        exitScopeSpace();
+
+        new_func->sym=sym;
+        new_func->sym->name=$2;
+        new_func->type=programfunc_e;
+        new_func->sym->offset=currScopeOffset();
+        new_func->sym->space=currScopeSpace();
+        $$=new_func;
+
+        //Insert new function in SymbolTable
+        insert_SymTable($2,scope,yylineno,4,currScopeOffset(),currScopeSpace());
+				inside_function--;
+
 		}
 		|	FUNCTION {
 				inside_function++;
@@ -529,8 +573,7 @@ funcdef:	FUNCTION IDENTIFIER {
 					i++;
 				}
 				func_name++;
-				//Insert new function in SymbolTable
-				insert_SymTable(f_name,scope,yylineno,4);
+
         incCurrScopeOffset();
         push(currScopeOffset());
         enterScopeSpace();
@@ -544,17 +587,22 @@ funcdef:	FUNCTION IDENTIFIER {
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
-        new_func->sym=sym;
-
-        new_func->sym->name= f_name;
-        new_func->type=programfunc_e;
-        $$=new_func;
-        inside_function--;
-        exitScopeSpace();
-        exitScopeSpace();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
         restoreCurScopeOffset(pop());
+        exitScopeSpace();
+        exitScopeSpace();
+
+        new_func->sym=sym;
+        new_func->sym->name= f_name;
+        new_func->type=programfunc_e;
+        new_func->sym->offset=currScopeOffset();
+        new_func->sym->space=currScopeSpace();
+        $$=new_func;
+
+        //Insert new function in SymbolTable
+        insert_SymTable(f_name,scope,yylineno,4,currScopeOffset(),currScopeSpace());
+        inside_function--;
 	}
 	   ;
 
@@ -654,9 +702,9 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-					insert_funcArg(scope+1,yylineno,$1);
-					insert_SymTable($1,scope+1,yylineno,3);
+					//insert_funcArg(scope+1,yylineno,$1);
           incCurrScopeOffset();
+					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -674,9 +722,9 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-					insert_funcArg(scope+1,yylineno,$3);
-					insert_SymTable($3,scope+1,yylineno,3);
+				//	insert_funcArg(scope+1,yylineno,$3);
           incCurrScopeOffset();
+					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
 			}
 	  |			{fprintf(GOUT,"idlist: \n");}

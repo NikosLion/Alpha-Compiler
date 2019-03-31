@@ -14,17 +14,17 @@ struct FuncArg *newArg=NULL;
   me ta library functions.
 */
 void init_symTable(){
-    insert_SymTable("print",0,0,5);
-    insert_SymTable("input",0,0,5);
-    insert_SymTable("objectmemberkeys",0,0,5);
-    insert_SymTable("objectcopy",0,0,5);
-    insert_SymTable("totalarguments",0,0,5);
-    insert_SymTable("argument",0,0,5);
-    insert_SymTable("typeof",0,0,5);
-    insert_SymTable("strtonum",0,0,5);
-    insert_SymTable("sqrt",0,0,5);
-    insert_SymTable("cos",0,0,5);
-    insert_SymTable("sin",0,0,5);
+    insert_SymTable("print",0,0,5,0,programvar);
+    insert_SymTable("input",0,0,5,0,programvar);
+    insert_SymTable("objectmemberkeys",0,0,5,0,programvar);
+    insert_SymTable("objectcopy",0,0,5,0,programvar);
+    insert_SymTable("totalarguments",0,0,5,0,programvar);
+    insert_SymTable("argument",0,0,5,0,programvar);
+    insert_SymTable("typeof",0,0,5,0,programvar);
+    insert_SymTable("strtonum",0,0,5,0,programvar);
+    insert_SymTable("sqrt",0,0,5,0,programvar);
+    insert_SymTable("cos",0,0,5,0,programvar);
+    insert_SymTable("sin",0,0,5,0,programvar);
 }
 
 /*Typwnei ta periexomena tou symbol table
@@ -97,7 +97,7 @@ void HideVar(int scope){
   parametrous to onoma, to scope, th grammh pou
   vrethike to symvolo kai ton typo tou.
 */
-void insert_SymTable(char *name,int scope,int line,int enu){
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space){
 
     newEntry=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
@@ -111,6 +111,8 @@ void insert_SymTable(char *name,int scope,int line,int enu){
     newEntry->scope=scope;
     newEntry->line=line;
     newEntry->type=enu;
+    newEntry->offset=offset;
+    newEntry->space=space;
 
     if(ScopeListHead==NULL){
         ScopeListHead=newEntry;
