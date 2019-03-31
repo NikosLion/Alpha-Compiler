@@ -19,12 +19,6 @@ typedef struct SymbolTableEntry{
     struct FuncArg *args;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
-    union value{
-      char* stringValue;
-      int intValue;
-      double realValue;
-      int boolean;    //true 1,false 0,null -1
-    }value;
 }SymbolTableEntry;
 
 

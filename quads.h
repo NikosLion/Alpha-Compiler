@@ -35,10 +35,13 @@ enum expr_t{
 typedef struct expr{
   enum expr_t type;
   SymbolTableEntry* sym;
+  union value{
+    char* stringValue;
+    int intValue;
+    double realValue;
+    int boolean;    //true 1,false 0,null 0
+  }value;
   struct expr* index;
-  double numConst;
-  char* strConst;
-  unsigned char boolCOnst;
   struct expr* next;
 }expr;
 

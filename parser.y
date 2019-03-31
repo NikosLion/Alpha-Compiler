@@ -36,7 +36,7 @@ void yyerror(const char *s);
   char* stringValue;
   int intValue;
   double realValue;
-  struct SymbolTableEntry *exprNode;
+  struct expr *exprNode;
   struct FuncArg *argument_t;
 };
 
@@ -144,29 +144,29 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
 	|		NOT expr							{fprintf(GOUT,"term: ! expr\n");}
 	|		INCR lvalue{
         fprintf(GOUT,"term: ++lvalue\n");
-        if($2->type==4 || $2->type==5){
-          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->name);
+        if($2->type==programfunc_e || $2->type==libraryfunc_e){
+          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->sym->name);
           exit(0);
         }
       }
 	|		lvalue INCR	{
         fprintf(GOUT,"term: lvalue++\n");
-        if($1->type==4 || $1->type==5){
-          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->name);
+        if($1->type==programfunc_e || $1->type==libraryfunc_e){
+          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->sym->name);
           exit(0);
         }
       }
 	|		DECR lvalue{
         fprintf(GOUT,"term: --lvalue\n");
-        if($2->type==4 || $2->type==5){
-          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->name);
+        if($2->type==programfunc_e || $2->type==libraryfunc_e){
+          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$2->sym->name);
           exit(0);
         }
       }
 	|		lvalue DECR{
         fprintf(GOUT,"term: lvalue--\n");
-        if($1->type==4 || $1->type==5){
-          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->name);
+        if($1->type==programfunc_e || $1->type==libraryfunc_e){
+          fprintf(GOUT,"Error at line %d: Invalid action to function %s \n",yylineno,$1->sym->name);
           exit(0);
         }
       }
@@ -186,13 +186,13 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
 
 assignexpr:	lvalue ASSIGN expr{
               fprintf(GOUT,"assignexpr: lvalue = expr\n");
-              if($1->type==4 || $1->type==5){
-                fprintf(GOUT,"Error at line %d: Cannot assign to Funtion %s \n",yylineno,$1->name);
+              if($1->type==programfunc_e || $1->type==libraryfunc_e){
+                fprintf(GOUT,"Error at line %d: Cannot assign to Funtion %s \n",yylineno,$1->sym->name);
                 exit(0);
               }
-              if($3->type==4 || $3->type==5){
+              if($3->type==programfunc_e || $3->type==libraryfunc_e){
                 $1->type=$3->type;
-                change_type($1->name);
+                change_type($1->sym->name);
                 $$=$1;
               }
           }
@@ -228,14 +228,18 @@ lvalue:		IDENTIFIER {
 			int type=0;
 			int found_scope=-1;
 
-      struct SymbolTableEntry *temp_maloc;
-      temp_maloc=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+      struct expr *temp_maloc;
+      temp_maloc=(struct expr*)malloc(sizeof(struct expr));
+
+      struct SymbolTableEntry *sym;
+      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+      temp_maloc->sym=sym;
 
 			//arxika check an einai libfunc
 			if(look_lib_func($1)){
-				type=5;
-				temp_maloc->name=$1;
-				temp_maloc->type=type;
+				temp_maloc->sym->name=$1;
+				temp_maloc->type=libraryfunc_e;;
 				$$=temp_maloc;
 				break;
 			}
@@ -244,12 +248,13 @@ lvalue:		IDENTIFIER {
 				//periptwseis pou vriskoume kati
 				if((found_scope=lookup_symTable2($1,tmp_scope,1))!=-2){
 					type=1;
-					temp_maloc->name=$1;
-					temp_maloc->type=type;
+					temp_maloc->sym->name=$1;
+					temp_maloc->type=var_e;
+          temp_maloc->sym->type=type;
 					$$=temp_maloc;
-    				break;
-    			}
-    			else if((found_scope=lookup_symTable2($1,tmp_scope,2))!=-2){
+    			break;
+    		}
+    		else if((found_scope=lookup_symTable2($1,tmp_scope,2))!=-2){
 					type=2;
 					int tmp_scope2=scope;
 					while(tmp_scope2>=tmp_scope){
@@ -259,47 +264,54 @@ lvalue:		IDENTIFIER {
 						}
 						tmp_scope2--;
 					}
-					temp_maloc->name=$1;
-					temp_maloc->type=type;
+					temp_maloc->sym->name=$1;
+          temp_maloc->sym->type=type;
+          temp_maloc->type=var_e;
 					$$=temp_maloc;
-    				break;
-    			}
-    			else if((found_scope=lookup_symTable2($1,tmp_scope,3))!=-2){
-    				type=3;
-    				if(scope==found_scope){
-						temp_maloc->name=$1;
-						temp_maloc->type=type;
-						$$=temp_maloc;
-    					break;
-    				}
-    				else{
-    					fprintf(GOUT,"Error at line %d: Cannot access formal identifier %s \n",yylineno,$1);
-    					exit(0);
-    				}
-    			}
-    			else if((found_scope=lookup_symTable2($1,tmp_scope,4))!=-2){
-    				type=4;
-					  temp_maloc->name=$1;
-					  temp_maloc->type=type;
-					  $$=temp_maloc;
-    				break;
-    			}
+    			break;
+    		}
+  			else if((found_scope=lookup_symTable2($1,tmp_scope,3))!=-2){
+  				type=3;
+  				if(scope==found_scope){
+					temp_maloc->sym->name=$1;
+					temp_maloc->sym->type=type;
+          temp_maloc->type=var_e;
+					$$=temp_maloc;
+  				break;
+  				}
+  				else{
+  					fprintf(GOUT,"Error at line %d: Cannot access formal identifier %s \n",yylineno,$1);
+  					exit(0);
+  				}
+    		}
+  			else if((found_scope=lookup_symTable2($1,tmp_scope,4))!=-2){
+  				type=4;
+				  temp_maloc->sym->name=$1;
+				  temp_maloc->sym->type=type;
+          temp_maloc->type=var_e;
+				  $$=temp_maloc;
+  				break;
+  			}
 				tmp_scope--;
 			}
+
 			//an dn vrethei tipota kanoume insert sto trexon scope
 			if(type==0){
     			if(scope == 0){
     				insert_SymTable($1,scope,yylineno,1);
             incCurrScopeOffset();
-					  temp_maloc->name=$1;
-					  temp_maloc->type=1;
+					  temp_maloc->sym->name=$1;
+					  temp_maloc->sym->type=1;
+            temp_maloc->type=var_e;
 					  $$=temp_maloc;
+
     			}
     			else{
     				insert_SymTable($1,scope,yylineno,2);
             incCurrScopeOffset();
-					  temp_maloc->name=$1;
-					  temp_maloc->type=2;
+					  temp_maloc->sym->name=$1;
+					  temp_maloc->sym->type=2;
+            temp_maloc->type=var_e;
 					  $$=temp_maloc;
     			}
     		}
@@ -307,8 +319,15 @@ lvalue:		IDENTIFIER {
 	  |		LOCAL IDENTIFIER		{
 			fprintf(GOUT,"lvalue: local IDENTIFIER\n");
 
-			struct SymbolTableEntry *temp_maloc;
-			temp_maloc=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+			struct expr *temp_maloc;
+			temp_maloc=(struct expr*)malloc(sizeof(struct expr));
+
+      struct SymbolTableEntry *sym;
+      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+      temp_maloc->sym=sym;
+
+
 
 			if(look_lib_func($2)){
 				fprintf(GOUT,"Error at line %d: Local identifier trying to shadow library function: %s\n", yylineno,$2);
@@ -317,14 +336,16 @@ lvalue:		IDENTIFIER {
 
 			//psaxnoume sto trexon scope
 			if( lookup_symTable($2,scope,2)){
-				temp_maloc->name=$2;
-				temp_maloc->type=2;
+				temp_maloc->sym->name=$2;
+				temp_maloc->sym->type=2;
+        temp_maloc->type=var_e;
 				$$=temp_maloc;
 				break;
 			}
 			else if(lookup_symTable($2,scope,4)){
-				temp_maloc->name=$2;
-				temp_maloc->type=4;
+				temp_maloc->sym->name=$2;
+				temp_maloc->sym->type=4;
+        temp_maloc->type=programfunc_e;
 				$$=temp_maloc;
 				break;
 			}
@@ -332,15 +353,17 @@ lvalue:		IDENTIFIER {
 			//keyword "local" an eimaste se scope 0
 			else{
 				if(scope == 0){
-					temp_maloc->name=$2;
-					temp_maloc->type=1;
+				  temp_maloc->sym->name=$2;
+					temp_maloc->sym->type=1;
+          temp_maloc->type=var_e;
 					$$=temp_maloc;
 					insert_SymTable($2,0,yylineno,1);
           incCurrScopeOffset();
 				}
 				else{
-					temp_maloc->name=$2;
-					temp_maloc->type=2;
+					temp_maloc->sym->name=$2;
+					temp_maloc->sym->type=2;
+          temp_maloc->type=var_e;
 					$$=temp_maloc;
 					insert_SymTable($2,scope,yylineno,2);
           incCurrScopeOffset();
@@ -350,18 +373,25 @@ lvalue:		IDENTIFIER {
 	  |		DOUBLE_COLON IDENTIFIER	{
 			fprintf(GOUT,"lvalue: ::IDENTIFIER\n");
 
-			struct SymbolTableEntry *temp_maloc;
-			temp_maloc=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+			struct expr *temp_maloc;
+			temp_maloc=(struct expr*)malloc(sizeof(struct expr));
+
+      struct SymbolTableEntry *sym;
+      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+      temp_maloc->sym=sym;
 
 			if(lookup_symTable($2,0,1)){
-				temp_maloc->name=$2;
-				temp_maloc->type=1;
+			  temp_maloc->sym->name=$2;
+			  temp_maloc->sym->type=1;
+        temp_maloc->type=var_e;
 				$$=temp_maloc;
 				break;
 			}
 			else if(lookup_symTable($2,0,4)){
-				temp_maloc->name=$2;
-				temp_maloc->type=4;
+				temp_maloc->sym->name=$2;
+				temp_maloc->sym->type=4;
+        temp_maloc->type=programfunc_e;
 				$$=temp_maloc;
 				break;
 			}
@@ -381,7 +411,7 @@ member:		lvalue DOT IDENTIFIER			{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
 
 call:		lvalue callsuffix {
           fprintf(GOUT,"call: lvalue callsuffix\n");
-          if(($1->type!=4) && (!look_lib_func($1->name))){
+          if(($1->type!=4) && (!look_lib_func($1->sym->name))){
             fprintf(GOUT,"Error at line %d: Invalid call\n",yylineno);
             exit(0);
           }
@@ -433,8 +463,8 @@ indexed:	indexedelem					       {fprintf(GOUT,"indexedelem\n");}
 indexedelem:	L_CURLY expr COLON expr R_CURLY	{
                 fprintf(GOUT,"indexedelem: { expr : expr }\n");
                 if($2->value.stringValue!=NULL){
-                  if($4->type==4){
-                    change_name($4->name,$2->value.stringValue,scope);
+                  if($4->type==programfunc_e){
+                    change_name($4->sym->name,$2->value.stringValue,scope);
                   }
                 }
               }
@@ -472,20 +502,23 @@ funcdef:	FUNCTION IDENTIFIER {
 				fprintf(GOUT,"funcdef: function IDENTIFIER ( idlist ) block\n");
 
 
-        struct SymbolTableEntry *new_func;
-        new_func=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        new_func->name=$2;
-        new_func->type=4;
+        struct expr *new_func;
+        new_func=(struct expr*)malloc(sizeof(struct expr));
+
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+        new_func->sym=sym;
+
+        new_func->sym->name=$2;
+        new_func->type=programfunc_e;
         $$=new_func;
 				inside_function--;
-        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
         exitScopeSpace();
-        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
         exitScopeSpace();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
         restoreCurScopeOffset(pop());
-        printf("!!!!!!!!!!!!!!!!!!  %d\n",currScopeOffset());
 		}
 		|	FUNCTION {
 				inside_function++;
@@ -505,10 +538,16 @@ funcdef:	FUNCTION IDENTIFIER {
 		}	L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();}block {
 
 				fprintf(GOUT,"funcdef: function ( idlist )\n");
-        struct SymbolTableEntry *new_func;
-        new_func=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        new_func->name= f_name;
-        new_func->type=4;
+        struct expr *new_func;
+        new_func=(struct expr*)malloc(sizeof(struct expr));
+
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+        new_func->sym=sym;
+
+        new_func->sym->name= f_name;
+        new_func->type=programfunc_e;
         $$=new_func;
         inside_function--;
         exitScopeSpace();
@@ -521,47 +560,83 @@ funcdef:	FUNCTION IDENTIFIER {
 
  const:		INTEGER	{
                     fprintf(GOUT,"const: INTEGER\n");
-                    struct SymbolTableEntry *new_int;
-                    new_int=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    struct expr *new_int;
+                    new_int=(struct expr*)malloc(sizeof(struct expr));
+
+                    struct SymbolTableEntry *sym;
+                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    new_int->sym=sym;
+
                     new_int->value.intValue =$1;
+                    new_int->type=constnum_e;
                     $$=new_int;
                   }
       |		REAL		{
                     fprintf(GOUT,"const: REAL\n");
-                    struct SymbolTableEntry *new_real;
-                    new_real=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    struct expr *new_real;
+                    new_real=(struct expr*)malloc(sizeof(struct expr));
+
+                    struct SymbolTableEntry *sym;
+                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    new_real->sym=sym;
+
                     new_real->value.realValue =$1;
+                    new_real->type=constnum_e;
                     $$=new_real;
                   }
       |		STRINGLITERAL	{
                           fprintf(GOUT,"const: STRINGLITERAL\n");
-                          struct SymbolTableEntry *new_string;
+                          struct expr *new_string;
                           char *csgo;
-                          new_string=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                          new_string=(struct expr*)malloc(sizeof(struct expr));
+
+                          struct SymbolTableEntry *sym;
+                          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                          new_string->sym=sym;
+
                           csgo= malloc(strlen($1+1));
                           csgo=$1;
                           new_string->value.stringValue=csgo;
+                          new_string->type=conststring_e;
                           $$=new_string;
                         }
       |		NIL				{
                       fprintf(GOUT,"const: NIL\n");
-                      struct SymbolTableEntry *new_null;
-                      new_null=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                      new_null->value.boolean=1;
+                      struct expr *new_null;
+                      new_null=(struct expr*)malloc(sizeof(struct expr));
+
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_null->sym=sym;
+
+                      new_null->value.boolean=0;
+                      new_null->type=nil_e;
                       $$=new_null;
                     }
       |		TRUE			{
                       fprintf(GOUT,"const: TRUE\n");
-                      struct SymbolTableEntry *new_boolean;
-                      new_boolean=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      struct expr *new_boolean;
+                      new_boolean=(struct expr*)malloc(sizeof(struct expr));
+
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_boolean->sym=sym;
+
                       new_boolean->value.boolean=1;
+                      new_boolean->type=constbool_e;
                       $$=new_boolean;
                     }
       |		FALSE			{
                       fprintf(GOUT,"const: FALSE\n");
-                      struct SymbolTableEntry *new_boolean;
-                      new_boolean=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      struct expr *new_boolean;
+                      new_boolean=(struct expr*)malloc(sizeof(struct expr));
+
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_boolean->sym=sym;
+
                       new_boolean->value.boolean=0;
+                      new_boolean->type=constbool_e;
                       $$=new_boolean;
                     }
       ;
