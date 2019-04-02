@@ -18,10 +18,13 @@ int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
 char *f_name="_F";
+char *t_name="_T";
+int temp_var_counter=0;
 
 
 
 char* concat(const char *s1, const char *s2);
+
 
 int yylex(void);
 void yyerror(const char *s);
@@ -127,7 +130,7 @@ arithmeticop: expr PLUS expr			{fprintf(GOUT,"op: expr + expr\n");}
 			     | 	expr MODULO expr	{fprintf(GOUT,"op: expr Modulo expr\n");}
 			     ;
 
-relativeop:		expr GREATER expr   {fprintf(GOUT,"op: expr > expr\n");}
+relativeop:		expr GREATER expr  {fprintf(GOUT,"op: expr > expr\n");}
 		  |		expr GR_EQUAL expr	{fprintf(GOUT,"op: expr >= expr\n");}
 		  |		expr LESS expr		{fprintf(GOUT,"op: expr < expr\n");}
 		  |		expr LESS_EQUAL expr{fprintf(GOUT,"op: expr <= expr\n");}
@@ -135,13 +138,50 @@ relativeop:		expr GREATER expr   {fprintf(GOUT,"op: expr > expr\n");}
 		  |		expr NOT_EQUALS expr{fprintf(GOUT,"op: expr != expr\n");}
 		  ;
 
-booleanop:		expr AND expr		{fprintf(GOUT,"op: expr && expr\n");}
-		 |		expr OR expr		{fprintf(GOUT,"op: expr || expr\n");}
+booleanop:		expr AND expr {
+                fprintf(GOUT,"op: expr && expr\n");
+                char s[20];
+                char *yo;
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                sprintf(s,"%d",temp_var_counter);
+                yo=concat(t_name,s);
+                temp_var_counter++;
+                temp->sym->name=yo;
+                emit(and,$1,$3,temp,0,yylineno);
+              }
+		 |		expr OR expr {
+            fprintf(GOUT,"op: expr || expr\n");
+            char s1[20];
+            char *yo1;
+            struct expr *temp1;
+            temp1=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym1;
+            sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp1->sym=sym1;
+            sprintf(s1,"%d",temp_var_counter);
+            yo1=concat(t_name,s1);
+            temp1->sym->name=yo1;
+            temp_var_counter++;
+            emit(or,$1,$3,temp1,0,yylineno);
+          }
 		 ;
 
-term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
-	|		MINUS expr %prec UMINUS	{fprintf(GOUT,"term: -expr\n");}
-	|		NOT expr {fprintf(GOUT,"term: ! expr\n");}
+term:		L_PARENTHESIS expr R_PARENTHESIS 	{
+          fprintf(GOUT,"term: ( expr )\n");
+          $$=$2;
+        }
+	|		MINUS expr %prec UMINUS	{
+        fprintf(GOUT,"term: -expr\n");
+        //////////////////////////////////////////////////
+      }
+	|		NOT expr {
+        fprintf(GOUT,"term: ! expr\n");
+        emit(not,$2,NULL,$2,0,yylineno);
+      }
 	|		INCR lvalue{
         fprintf(GOUT,"term: ++lvalue\n");
         if($2->type==programfunc_e || $2->type==libraryfunc_e){
@@ -215,10 +255,10 @@ assignexpr:	lvalue ASSIGN expr{
                 exit(0);
               }
               if($3->type==programfunc_e || $3->type==libraryfunc_e){
-                $1->type=$3->type;
                 change_type($1->sym->name);
-                $$=$1;
               }
+              $1->type=$3->type;
+              $$=$1;
               emit(assign,$3,NULL,$1,0,yylineno);
           }
 		  ;
@@ -766,13 +806,13 @@ void yyerror(const char *s){
 
 }
 
-char* concat(const char *s1, const char *s2)
-{
-    char *result = malloc(strlen(s1)+strlen(s2)+1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    return result;
+char* concat(const char *s1, const char *s2){
+  char *result = malloc(strlen(s1)+strlen(s2)+1);
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
 }
+
 
 int main(int argc, char **argv){
   //init_symTable();
@@ -808,12 +848,14 @@ int main(int argc, char **argv){
 
   yyparse();
 
+  print_symTable(GOUT);
+  print_quads(GOUT);
+
   fclose(yyin);
 
   if(GOUT!=stdout){
 	fclose(GOUT);
   }
-  print_symTable();
-  print_quads(GOUT);
+
   return 0;
 }

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include"symtable.h"
@@ -30,20 +29,20 @@ void init_symTable(){
 /*Typwnei ta periexomena tou symbol table
   ana scope.
 */
-void print_symTable(){
+void print_symTable(FILE* out){
 
     SymbolTableEntry *fasi=ScopeListHead;
     SymbolTableEntry *fasi2=ScopeListHead;
     struct FuncArg *temp_args;
 
-    printf("    \n");
+    fprintf(out,"    \n");
 
     while(fasi!=NULL){
-        printf("%s  %d  \n","Scope : ",fasi->scope);
-        printf("    \n");
+        fprintf(out,"%s  %d  \n","Scope : ",fasi->scope);
+        fprintf(out,"    \n");
         fasi2=fasi;
         while(fasi2!=NULL){
-            printf("Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
+            fprintf(out,"Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
            /*
 
            temp_args=fasi2->args;
@@ -57,10 +56,10 @@ void print_symTable(){
             */
             fasi2=fasi2->scope_next;
         }
-        printf("\n");
+        fprintf(out,"\n");
         fasi=fasi->scope_list_next;
     }
-    printf("    \n");
+    fprintf(out,"    \n");
 }
 
 /*Apenergopoiei ta symvola sto scope pou

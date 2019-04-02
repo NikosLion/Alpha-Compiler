@@ -118,7 +118,7 @@ char* return_op(int op){
 
 ////////////////////////////////////////////
 void print_quads(FILE* out){
-	fprintf(out,"Quad#\t\t\tOpcode\t\t\tresult\t\t\targ1\t\t\targ2\t\t\tlabel\n");
+	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
   int i=0;
 	for(i;i<currQuad;i++){
     fprintf(out,"\n");
@@ -127,7 +127,7 @@ void print_quads(FILE* out){
       fprintf(out,"Empty Quads\n");
       break;
     }
-    fprintf(out,"%d\t\t\t%s\t\t\t",i,return_op(temp->op));
+    fprintf(out,"%d\t\t%s\t\t\t",i,return_op(temp->op));
     if(temp->result!=NULL){
       fprintf(out,"%s\t\t\t",temp->result->sym->name);
     }
@@ -199,8 +199,92 @@ void print_quads(FILE* out){
       fprintf(out,"\t\t\t");
     }
     if((temp->op==if_eq)||(temp->op==if_noteq)||(temp->op==if_lesseq)||(temp->op==if_geatereq)||(temp->op==if_less)||(temp->op==if_greater)||(temp->op==jump)){
-      fprintf(out,"%d\t\t\t",temp->label);
+      fprintf(out,"%d\t\t",temp->label);
     }
+    else{
+      fprintf(out,"\t\t");
+    }
+    fprintf(out,"%d\t\t",temp->line);
   }
   fprintf(out,"\n\n");
+}
+
+
+///////////////////////////////////////////////////////////////
+int make_bool(struct expr *expr){
+  if(expr==NULL){
+    return 0;
+  }
+  else if(expr->type==constnum_e){
+    if(expr->int_real==1){
+      if(expr->value.intValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    else if(expr->int_real==0){
+      if(expr->value.realValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+  }
+  else if(expr->type==conststring_e){
+    if(expr->value.stringValue!=""){
+      return 1;
+    }
+    else{
+      return 0;
+    }
+  }
+  else if(expr->type==constbool_e){
+    if(expr->value.boolean==1){
+      return 1;
+    }
+    else{
+      return 0;
+    }
+  }
+  else if(expr->type==nil_e){
+    return 0;
+  }
+  else if(expr->type==programfunc_e){
+    return 1;
+  }
+  else if(expr->type==libraryfunc_e){
+    return 1;
+  }
+  else if(expr->type==newtable_e){
+    return 1;
+  }
+  else if(expr->type==arithexpr_e){
+    if(expr->int_real==1){
+      if(expr->value.intValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    else if(expr->int_real==0){
+      if(expr->value.realValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+  }
+  else if(expr->type==boolexpr_e){
+    if(expr->value.boolean==1){
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  }
 }

@@ -61,6 +61,7 @@ typedef struct quad{
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line);
 void expand(void);
 void print_quads(FILE* out);
+int make_bool(struct expr *expr);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
