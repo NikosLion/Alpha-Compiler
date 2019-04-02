@@ -152,6 +152,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
         temp_const=(struct expr*)malloc(sizeof(struct expr));
         temp_const->type=constnum_e;
         temp_const->value.intValue=1;
+        temp_const->int_real=1;
         emit(add,temp_const,$2,$2,0,yylineno);
       }
 	|		lvalue INCR	{
@@ -164,6 +165,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
         temp_const=(struct expr*)malloc(sizeof(struct expr));
         temp_const->type=constnum_e;
         temp_const->value.intValue=1;
+        temp_const->int_real=1;
         emit(add,$1,temp_const,$1,0,yylineno);
       }
 	|		DECR lvalue{
@@ -176,6 +178,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
         temp_const=(struct expr*)malloc(sizeof(struct expr));
         temp_const->type=constnum_e;
         temp_const->value.intValue=1;
+        temp_const->int_real=1;
         emit(sub,temp_const,$2,$2,0,yylineno);
       }
 	|		lvalue DECR{
@@ -188,6 +191,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{fprintf(GOUT,"term: ( expr )\n");}
         temp_const=(struct expr*)malloc(sizeof(struct expr));
         temp_const->type=constnum_e;
         temp_const->value.intValue=1;
+        temp_const->int_real=1;
         emit(sub,$1,temp_const,$1,0,yylineno);
       }
 	|		primary{
@@ -611,12 +615,9 @@ funcdef:	FUNCTION IDENTIFIER {
                     struct expr *new_int;
                     new_int=(struct expr*)malloc(sizeof(struct expr));
 
-                    struct SymbolTableEntry *sym;
-                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                    new_int->sym=sym;
-
                     new_int->value.intValue =$1;
                     new_int->type=constnum_e;
+                    new_int->int_real=1;
                     $$=new_int;
                   }
       |		REAL		{
@@ -624,12 +625,9 @@ funcdef:	FUNCTION IDENTIFIER {
                     struct expr *new_real;
                     new_real=(struct expr*)malloc(sizeof(struct expr));
 
-                    struct SymbolTableEntry *sym;
-                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                    new_real->sym=sym;
-
                     new_real->value.realValue =$1;
                     new_real->type=constnum_e;
+                    new_real->int_real=0;
                     $$=new_real;
                   }
       |		STRINGLITERAL	{
@@ -637,10 +635,6 @@ funcdef:	FUNCTION IDENTIFIER {
                           struct expr *new_string;
                           char *csgo;
                           new_string=(struct expr*)malloc(sizeof(struct expr));
-
-                          struct SymbolTableEntry *sym;
-                          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                          new_string->sym=sym;
 
                           csgo= malloc(strlen($1+1));
                           csgo=$1;
@@ -653,10 +647,6 @@ funcdef:	FUNCTION IDENTIFIER {
                       struct expr *new_null;
                       new_null=(struct expr*)malloc(sizeof(struct expr));
 
-                      struct SymbolTableEntry *sym;
-                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                      new_null->sym=sym;
-
                       new_null->value.boolean=0;
                       new_null->type=nil_e;
                       $$=new_null;
@@ -666,10 +656,6 @@ funcdef:	FUNCTION IDENTIFIER {
                       struct expr *new_boolean;
                       new_boolean=(struct expr*)malloc(sizeof(struct expr));
 
-                      struct SymbolTableEntry *sym;
-                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                      new_boolean->sym=sym;
-
                       new_boolean->value.boolean=1;
                       new_boolean->type=constbool_e;
                       $$=new_boolean;
@@ -678,10 +664,6 @@ funcdef:	FUNCTION IDENTIFIER {
                       fprintf(GOUT,"const: FALSE\n");
                       struct expr *new_boolean;
                       new_boolean=(struct expr*)malloc(sizeof(struct expr));
-
-                      struct SymbolTableEntry *sym;
-                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                      new_boolean->sym=sym;
 
                       new_boolean->value.boolean=0;
                       new_boolean->type=constbool_e;
@@ -702,7 +684,6 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-					//insert_funcArg(scope+1,yylineno,$1);
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
@@ -722,7 +703,6 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-				//	insert_funcArg(scope+1,yylineno,$3);
           incCurrScopeOffset();
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
@@ -834,5 +814,6 @@ int main(int argc, char **argv){
 	fclose(GOUT);
   }
   print_symTable();
+  print_quads(GOUT);
   return 0;
 }

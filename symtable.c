@@ -302,38 +302,6 @@ int look_lib_func(char *name){
     return lib_name;
 }
 
-/*Eisagwgh neou symvolou typou formal argument
-  ws neou komvou sth lista symvolwn enos function.
-*/
-void insert_funcArg(int scope,int line,char *name){
-
-    newArg=(struct FuncArg*)malloc(sizeof(struct FuncArg));
-    SymbolTableEntry *temp=ScopeListHead;
-    int t=0;
-
-    while((temp!=NULL) && (temp->scope_list_next!=NULL) && (t==0)){
-        if(temp->scope < scope){
-            temp=temp->scope_list_next;
-            t=1;
-        }
-    }
-
-    newArg->isActive=1;
-    newArg->name=strdup(name);
-    newArg->scope=scope;
-    newArg->line=line;
-    newArg->type=3;
-    newArg->next=NULL;
-
-    if(temp->args==NULL){
-        temp->args=newArg;
-    }
-    else{
-        newArg->next=temp->args;
-        temp->args=newArg;
-    }
-    return;
-}
 
 /*Epistrefei -1 an to "name" sygkrouetai
   me kapoio apo ta library function,

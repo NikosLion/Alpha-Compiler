@@ -1,5 +1,6 @@
 
 #include "symtable.h"
+#include <stdio.h>
 
 #define EXPAND_SIZE 1024
 #define CURR_SIZE (total*sizeof(quad))
@@ -35,6 +36,7 @@ enum expr_t{
 typedef struct expr{
   enum expr_t type;
   SymbolTableEntry* sym;
+  int int_real;
   union value{
     char* stringValue;
     int intValue;
@@ -58,6 +60,7 @@ typedef struct quad{
 
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line);
 void expand(void);
+void print_quads(FILE* out);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
