@@ -151,6 +151,7 @@ booleanop:		expr AND expr {
                 yo=concat(t_name,s);
                 temp_var_counter++;
                 temp->sym->name=yo;
+                insert_SymTable(yo,scope,yylineno,1,currScopeOffset(),currScopeSpace());
                 emit(and,$1,$3,temp,0,yylineno);
               }
 		 |		expr OR expr {
@@ -166,6 +167,7 @@ booleanop:		expr AND expr {
             yo1=concat(t_name,s1);
             temp1->sym->name=yo1;
             temp_var_counter++;
+            insert_SymTable(yo1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
             emit(or,$1,$3,temp1,0,yylineno);
           }
 		 ;
