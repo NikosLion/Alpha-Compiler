@@ -1,3 +1,6 @@
+
+//stack for funcname 
+
 typedef struct Function_stack{
   char *name;
   struct Function_stack* next;

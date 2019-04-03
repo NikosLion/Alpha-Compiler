@@ -12,7 +12,7 @@ int temp_var_counter=0;
 char *f_name="_F";
 int temp_func_counter=0;
 
-
+//////////////////////////////////////////////////////////////
 /*Arxikopoiei ton symbol table me table
   me ta library functions.
 */
@@ -30,6 +30,7 @@ void init_symTable(){
     insert_SymTable("sin",0,0,5,0,programvar);
 }
 
+/////////////////////////////////////////////////////
 /*Typwnei ta periexomena tou symbol table
   ana scope.
 */
@@ -48,7 +49,6 @@ void print_symTable(FILE* out){
         while(fasi2!=NULL){
             fprintf(out,"Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
            /*
-
            temp_args=fasi2->args;
             if((fasi2->type==4) && (temp_args!=NULL)){
               while(temp_args!=NULL){
@@ -56,7 +56,6 @@ void print_symTable(FILE* out){
                 temp_args=temp_args->next;
               }
             }
-
             */
             fasi2=fasi2->scope_next;
         }
@@ -66,6 +65,7 @@ void print_symTable(FILE* out){
     fprintf(out,"    \n");
 }
 
+//////////////////////////////////////////////////////////////////////////
 /*Apenergopoiei ta symvola sto scope pou
   dinetai mesw tou isActive field.
 */
@@ -94,8 +94,7 @@ void HideVar(int scope){
     return;
 }
 
-
-
+/////////////////////////////////////////////////////////
 /*Eisagwgh neou symvolou ston symbol table me
   parametrous to onoma, to scope, th grammh pou
   vrethike to symvolo kai ton typo tou.
@@ -126,7 +125,7 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
         SymbolTableEntry *temp=ScopeListHead;
         SymbolTableEntry *prev=temp;
 
-        if(temp->scope == newEntry->scope){                                               //insert sthn lista tou idiou scope gia scope 0
+        if(temp->scope == newEntry->scope){                                     //insert sthn lista tou idiou scope gia scope 0
                 newEntry->scope_next=temp;
                 newEntry->scope_list_next=temp->scope_list_next;
                 temp=newEntry;
@@ -136,16 +135,16 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
             newEntry->scope_list_next=ScopeListHead;
             ScopeListHead=newEntry;
         }
-        else if(newEntry->scope > temp->scope){                                            //vriskoume se poio scope einai
+        else if(newEntry->scope > temp->scope){                                 //vriskoume se poio scope einai
             while((temp!=NULL) && (newEntry->scope > temp->scope)){
                 prev=temp;
                 temp=temp->scope_list_next;
             }
-            if(temp==NULL){                                                             //create first node for this scope
+            if(temp==NULL){                                                     //create first node for this scope
                 prev->scope_list_next=newEntry;
                 newEntry->scope_list_next=NULL;
             }
-            else if(temp->scope == newEntry->scope){                                  //insert sthn lista tou idiou scope
+            else if(temp->scope == newEntry->scope){                            //insert sthn lista tou idiou scope
                 newEntry->scope_next=temp;
                 newEntry->scope_list_next=temp->scope_list_next;
                 temp=newEntry;
@@ -162,7 +161,7 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
     return;
 }
 
-
+////////////////////////////////////////////////////////////
 /*Lookup sto scope pou dinetai me vash to onoma
   kai ton typo tou symvolou pou psaxnoume.Epistrefei
   1 an vrethei to symvolo, 0 an oxi.
@@ -191,6 +190,7 @@ int lookup_symTable(char *name,int scope,int type){
     return 0;
 }
 
+///////////////////////////////////////////////////////////////
 /*Lookup sto scope pou dinetai gia active
   symvola.An vrethei to symvolo epistrefei to
   scope pou vrethike.An den uparxei to scope
@@ -224,6 +224,7 @@ int lookup_symTable2(char *name,int scope,int type){
     return -2;
 }
 
+////////////////////////////////////////////////////////
 /*Elegxei an to teleutaio symvolo pou egine eisagwgh
   sto scope pou dinetai einai synarthsh.
 */
@@ -242,6 +243,7 @@ int isUserFunc(int scope){
     }
 }
 
+/////////////////////////////////////////////////////
 /*Elegxei an to onoma pou dinetai sto
   sygkekrimeno scope antistoixei se onoma
   synarthshs.Ean nai epistrefei 1, diaforetika
@@ -267,6 +269,7 @@ int checkFuncName(char *name,int scope){
     return 0;
 }
 
+////////////////////////////////////////////////////////
 /*Epistrefei 1 ean to onoma pou dinetai antistoixei
   se onoma synarthshs vivliothikis, diaforetika
   epistrefei 0.
@@ -309,7 +312,7 @@ int look_lib_func(char *name){
     return lib_name;
 }
 
-
+/////////////////////////////////////////////////////////
 /*Epistrefei -1 an to "name" sygkrouetai
   me kapoio apo ta library function,
   1 an vrethei formal argument me to idio onoma
@@ -338,6 +341,7 @@ int lookup_funcArgs(int scope,char *name){
     return 0;							//den to vrhke, ara proxwraei h insert
 }
 
+//////////////////////////////////////////////////////////
 /*Diagrafei ta symvola pou eisixthisan ston symbol table
   kata tin klhsh mias synarthshs.
 */
@@ -389,6 +393,7 @@ int delete_call_args(int scope,int call_args_counter){
     }
 }
 
+////////////////////////////////////////////////////////////////
 /*Allazei to onoma tou symvolou "name" se
   "new_name". Kaleitai otan to deksiotero
   expr se stoixeio indexedelem einai typou
@@ -415,6 +420,7 @@ int change_name(char *name,char *new_name,int scope){
   return 0;
 }
 
+/////////////////////////////////////////////////////////
 /*Allazei ton typo tou symvolou "name" se
   "userfunc". Kaleitai otan to deksio melos
   enos assignexpr einai typou synarthshs wste
@@ -440,6 +446,8 @@ int change_type(char *name){
   return 1;
 }
 
+///////////////////////////////////////////////////////
+//concatanate 2 strings and return char*
 char* concat(const char *s1, const char *s2){
   char *result = malloc(strlen(s1)+strlen(s2)+1);
   strcpy(result, s1);
@@ -447,6 +455,8 @@ char* concat(const char *s1, const char *s2){
   return result;
 }
 
+//////////////////////////////////////////////////
+//gives temp var name
 char *temp_name() {
   char s[20];
   char *yo;
@@ -456,7 +466,8 @@ char *temp_name() {
   return yo;
 }
 
-
+/////////////////////////////////////////////////
+//gives func name
 char *temp_name_func() {
   char s[20];
   char *yo;
