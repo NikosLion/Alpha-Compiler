@@ -6,6 +6,8 @@
 
 quad* quads = (quad*) 0;
 
+
+
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line){
 
   if(currQuad == total){

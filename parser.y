@@ -4,6 +4,7 @@
 #include <string.h>
 #include "quads.h"
 #include "Stack.h"
+#include "Function_stack.h"
 
 extern int yylineno;
 extern char *yytext;
@@ -17,13 +18,8 @@ int lvalue_flag=0;
 int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
-char *f_name="_F";
-char *t_name="_T";
-int temp_var_counter=0;
 
 
-
-char* concat(const char *s1, const char *s2);
 
 
 int yylex(void);
@@ -49,11 +45,9 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop
 %type<argument_t> idlist
-%type<realValue>  arithmeticop
 %type<stringValue> ifstmt whilestmt forstmt returnstmt block  ifprefix
-%type<intValue> booleanop relativeop
 %type<stringValue>  call objectdef  member
 %type<stringValue> elist normcall methodcall callsuffix indexed indexedelem
 
@@ -102,10 +96,10 @@ stmt:	expr SEMICOLON		   {fprintf(GOUT,"stmt: expr ;  \n");}
     | SEMICOLON       	   {fprintf(GOUT,"stmt: SEMICOLON\n");}
 	  ;
 
-expr:	assignexpr     		   {fprintf(GOUT,"expr: assignexpr\n");}
-    | arithmeticop	   	   {fprintf(GOUT,"expr: arithmeticop\n");}
-    | booleanop		         {fprintf(GOUT,"expr: booleanop\n");}
-    | relativeop		   	   {fprintf(GOUT,"expr: relativeop\n");}
+expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}    //!!!!!!!!!!! isws oxi $$=$1
+    | arithmeticop  {fprintf(GOUT,"expr: arithmeticop\n"); $$=$1;}
+    | booleanop {fprintf(GOUT,"expr: booleanop\n"); $$=$1;}
+    | relativeop  {fprintf(GOUT,"expr: relativeop\n"); $$=$1;}
     | term {
         fprintf(GOUT,"expr: term\n");
         if(lvalue_flag==1){
@@ -123,52 +117,176 @@ expr:	assignexpr     		   {fprintf(GOUT,"expr: assignexpr\n");}
       }
     ;
 
-arithmeticop: expr PLUS expr			{fprintf(GOUT,"op: expr + expr\n");}
-  			   |  	expr MINUS expr		{fprintf(GOUT,"op: expr - expr\n");}
-  			   |	expr MUL expr		{fprintf(GOUT,"op: expr * expr\n");}
-			     | 	expr DIV expr		{fprintf(GOUT,"op: expr / expr\n");}
-			     | 	expr MODULO expr	{fprintf(GOUT,"op: expr Modulo expr\n");}
-			     ;
-
-relativeop:		expr GREATER expr  {fprintf(GOUT,"op: expr > expr\n");}
-		  |		expr GR_EQUAL expr	{fprintf(GOUT,"op: expr >= expr\n");}
-		  |		expr LESS expr		{fprintf(GOUT,"op: expr < expr\n");}
-		  |		expr LESS_EQUAL expr{fprintf(GOUT,"op: expr <= expr\n");}
-		  |		expr EQUALS expr	{fprintf(GOUT,"op: expr == expr\n");}
-		  |		expr NOT_EQUALS expr{fprintf(GOUT,"op: expr != expr\n");}
-		  ;
-
-booleanop:		expr AND expr {
-                fprintf(GOUT,"op: expr && expr\n");
-                char s[20];
-                char *yo;
+arithmeticop: expr PLUS expr  {
+                fprintf(GOUT,"op: expr + expr\n");
                 struct expr *temp;
                 temp=(struct expr*)malloc(sizeof(struct expr));
                 struct SymbolTableEntry *sym;
                 sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
                 temp->sym=sym;
-                sprintf(s,"%d",temp_var_counter);
-                yo=concat(t_name,s);
-                temp_var_counter++;
-                temp->sym->name=yo;
-                insert_SymTable(yo,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                temp->sym->offset=currScopeOffset();
+                temp->sym->space=currScopeSpace();
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+                incCurrScopeOffset();
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
+                emit(add,$1,$3,temp,0,yylineno);
+                $$=temp;
+              }
+  			   |  expr MINUS expr  {
+                fprintf(GOUT,"op: expr - expr\n");
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->offset=currScopeOffset();
+                temp->sym->space=currScopeSpace();
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+                incCurrScopeOffset();
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
+                emit(sub,$1,$3,temp,0,yylineno);
+                $$=temp;
+              }
+  			   |	expr MUL expr {
+                fprintf(GOUT,"op: expr * expr\n");
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->offset=currScopeOffset();
+                temp->sym->space=currScopeSpace();
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+                incCurrScopeOffset();
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
+                emit(mul,$1,$3,temp,0,yylineno);
+                $$=temp;
+              }
+			     | 	expr DIV expr  {
+                fprintf(GOUT,"op: expr / expr\n");
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->offset=currScopeOffset();
+                temp->sym->space=currScopeSpace();
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+                incCurrScopeOffset();
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
+                emit(Div,$1,$3,temp,0,yylineno);
+                $$=temp;
+              }
+			     | 	expr MODULO expr {
+                fprintf(GOUT,"op: expr Modulo expr\n");
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->offset=currScopeOffset();
+                temp->sym->space=currScopeSpace();
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+                incCurrScopeOffset();
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
+                emit(mod,$1,$3,temp,0,yylineno);
+                $$=temp;
+              }
+			     ;
+
+relativeop:		expr GREATER expr  {
+                fprintf(GOUT,"op: expr > expr\n");
+
+              }
+		  |		expr GR_EQUAL expr {
+            fprintf(GOUT,"op: expr >= expr\n");
+
+          }
+		  |		expr LESS expr {
+            fprintf(GOUT,"op: expr < expr\n");
+
+          }
+		  |		expr LESS_EQUAL expr {
+            fprintf(GOUT,"op: expr <= expr\n");
+
+          }
+		  |		expr EQUALS expr {
+            fprintf(GOUT,"op: expr == expr\n");
+
+          }
+		  |		expr NOT_EQUALS expr {
+            fprintf(GOUT,"op: expr != expr\n");
+
+          }
+		  ;
+
+booleanop:		expr AND expr {
+                fprintf(GOUT,"op: expr && expr\n");
+
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->name=temp_name();
+                temp->type=boolexpr_e;
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
                 emit(and,$1,$3,temp,0,yylineno);
+                $$=temp;
               }
 		 |		expr OR expr {
             fprintf(GOUT,"op: expr || expr\n");
-            char s1[20];
-            char *yo1;
-            struct expr *temp1;
-            temp1=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym1;
-            sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp1->sym=sym1;
-            sprintf(s1,"%d",temp_var_counter);
-            yo1=concat(t_name,s1);
-            temp1->sym->name=yo1;
-            temp_var_counter++;
-            insert_SymTable(yo1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
-            emit(or,$1,$3,temp1,0,yylineno);
+
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=boolexpr_e;
+            if(scope==0){
+              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            }
+            else{
+              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+            }
+            emit(or,$1,$3,temp,0,yylineno);
+            $$=temp;
           }
 		 ;
 
@@ -178,7 +296,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
 	|		MINUS expr %prec UMINUS	{
         fprintf(GOUT,"term: -expr\n");
-        //////////////////////////////////////////////////
+        emit(uminus,$2,NULL,$2,0,yylineno);
       }
 	|		NOT expr {
         fprintf(GOUT,"term: ! expr\n");
@@ -192,7 +310,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=constnum_e;
+        temp_const->type=arithexpr_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(add,temp_const,$2,$2,0,yylineno);
@@ -205,7 +323,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=constnum_e;
+        temp_const->type=arithexpr_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(add,$1,temp_const,$1,0,yylineno);
@@ -218,7 +336,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=constnum_e;
+        temp_const->type=arithexpr_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(sub,temp_const,$2,$2,0,yylineno);
@@ -231,7 +349,7 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=constnum_e;
+        temp_const->type=arithexpr_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(sub,$1,temp_const,$1,0,yylineno);
@@ -370,11 +488,8 @@ lvalue:		IDENTIFIER {
             temp_maloc->sym->space=currScopeSpace();
             temp_maloc->sym->name=$1;
             temp_maloc->sym->type=1;
-
-    				insert_SymTable($1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
-
             temp_maloc->type=var_e;
-
+    				insert_SymTable($1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
 					  $$=temp_maloc;
 
     			}
@@ -384,10 +499,8 @@ lvalue:		IDENTIFIER {
             temp_maloc->sym->space=currScopeSpace();
             temp_maloc->sym->name=$1;
 					  temp_maloc->sym->type=2;
-
-    				insert_SymTable($1,scope,yylineno,2,currScopeOffset(),currScopeSpace());
-
             temp_maloc->type=var_e;
+    				insert_SymTable($1,scope,yylineno,2,currScopeOffset(),currScopeSpace());
 					  $$=temp_maloc;
     			}
     		}
@@ -575,12 +688,24 @@ funcdef:	FUNCTION IDENTIFIER {
 		   }
 		   //If nothing found, then insert new function in SymbolTable
 		   else{
-				   inside_function++;
+         struct expr *new_func;
+         new_func=(struct expr*)malloc(sizeof(struct expr));
+         struct SymbolTableEntry *sym;
+         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+         new_func->sym=sym;
 
-           incCurrScopeOffset();
+         new_func->sym->name=$2;
+         new_func->type=programfunc_e;
+         new_func->value.intValue=currQuad;
 
-           push(currScopeOffset());
-           enterScopeSpace();
+			   inside_function++;
+         incCurrScopeOffset();
+         push(currScopeOffset());
+         enterScopeSpace();
+
+         f_push(new_func->sym->name);
+         emit(funcstart,NULL,NULL,new_func,0,yylineno);
+
 		   }
     } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
 
@@ -588,9 +713,9 @@ funcdef:	FUNCTION IDENTIFIER {
 
         struct expr *new_func;
         new_func=(struct expr*)malloc(sizeof(struct expr));
-
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        new_func->sym=sym;
 
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
@@ -598,9 +723,9 @@ funcdef:	FUNCTION IDENTIFIER {
         exitScopeSpace();
         exitScopeSpace();
 
-        new_func->sym=sym;
-        new_func->sym->name=$2;
+        new_func->sym->name=f_pop();
         new_func->type=programfunc_e;
+        new_func->value.intValue=currQuad;
         new_func->sym->offset=currScopeOffset();
         new_func->sym->space=currScopeSpace();
         $$=new_func;
@@ -608,30 +733,39 @@ funcdef:	FUNCTION IDENTIFIER {
         //Insert new function in SymbolTable
         insert_SymTable($2,scope,yylineno,4,currScopeOffset(),currScopeSpace());
 				inside_function--;
+        emit(funcend,NULL,NULL,new_func,0,yylineno);
 
 		}
 		|	FUNCTION {
 				inside_function++;
-				int i=0;
-				char *a="a";
-				while(i<=func_name){
-					f_name=concat(f_name, a);
-					i++;
-				}
-				func_name++;
+
+        struct expr *new_func;
+        new_func=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        new_func->sym=sym;
+
+        new_func->sym->name=temp_name_func();
+        //decrs_temp_func_counter();
+        new_func->type=programfunc_e;
+        new_func->value.intValue=currQuad;
 
         incCurrScopeOffset();
         push(currScopeOffset());
         enterScopeSpace();
 
+        f_push(new_func->sym->name);
+        emit(funcstart,NULL,NULL,new_func,0,yylineno);
+
 		}	L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();}block {
 
 				fprintf(GOUT,"funcdef: function ( idlist )\n");
+
         struct expr *new_func;
         new_func=(struct expr*)malloc(sizeof(struct expr));
-
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        new_func->sym=sym;
 
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
@@ -639,16 +773,17 @@ funcdef:	FUNCTION IDENTIFIER {
         exitScopeSpace();
         exitScopeSpace();
 
-        new_func->sym=sym;
-        new_func->sym->name= f_name;
+        new_func->sym->name=f_pop();
         new_func->type=programfunc_e;
+        new_func->value.intValue=currQuad;
         new_func->sym->offset=currScopeOffset();
         new_func->sym->space=currScopeSpace();
         $$=new_func;
 
         //Insert new function in SymbolTable
-        insert_SymTable(f_name,scope,yylineno,4,currScopeOffset(),currScopeSpace());
+        insert_SymTable(new_func->sym->name,scope,yylineno,4,currScopeOffset(),currScopeSpace());
         inside_function--;
+        emit(funcend,NULL,NULL,new_func,0,yylineno);
 	}
 	   ;
 
@@ -726,8 +861,18 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
+          struct expr *new_arg;
+          new_arg=(struct expr*)malloc(sizeof(struct expr));
+          struct SymbolTableEntry *sym;
+          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+          new_arg->sym=sym;
+          new_arg->sym->name=$1;
+          new_arg->type=var_e;
+          emit(param,NULL,NULL,new_arg,0,yylineno);
+
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
+
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -745,6 +890,15 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
+          struct expr *new_arg;
+          new_arg=(struct expr*)malloc(sizeof(struct expr));
+          struct SymbolTableEntry *sym;
+          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+          new_arg->sym=sym;
+          new_arg->sym->name=$3;
+          new_arg->type=var_e;
+          emit(param,NULL,NULL,new_arg,0,yylineno);
+
           incCurrScopeOffset();
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
@@ -776,6 +930,9 @@ returnstmt:	RETURN SEMICOLON{
                 fprintf(GOUT,"Error at line %d: Invalid Return statement\n", yylineno);
                 exit(0);
               }
+              struct expr *new_ret;
+              new_ret=(struct expr*)malloc(sizeof(struct expr));
+              emit(Return,NULL,NULL,NULL,0,yylineno);
             }
     	  | RETURN expr SEMICOLON	{
             fprintf(GOUT,"returnstmt: return expr ;\n");
@@ -783,6 +940,7 @@ returnstmt:	RETURN SEMICOLON{
               fprintf(GOUT,"Error at line %d: Invalid Return statement\n", yylineno);
               exit(0);
             }
+            emit(Return,NULL,NULL,$2,0,yylineno);
           }
     	  ;
 %%
@@ -808,12 +966,7 @@ void yyerror(const char *s){
 
 }
 
-char* concat(const char *s1, const char *s2){
-  char *result = malloc(strlen(s1)+strlen(s2)+1);
-  strcpy(result, s1);
-  strcat(result, s2);
-  return result;
-}
+
 
 
 int main(int argc, char **argv){

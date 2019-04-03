@@ -37,6 +37,9 @@ int lookup_funcArgs(int scope,char *name);
 int delete_call_args(int scope,int call_args_counter);
 int change_name(char *name,char *new_name,int scope);
 int change_type(char *name);
+char* concat(const char *s1, const char *s2);
+char *temp_name();
+char *temp_name_func();
 
 void HideVar(int scope);
 void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space);

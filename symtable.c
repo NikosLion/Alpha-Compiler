@@ -7,6 +7,10 @@
 struct SymbolTableEntry *ScopeListHead=NULL;
 struct SymbolTableEntry *newEntry=NULL;
 struct FuncArg *newArg=NULL;
+char *t_name="_T";
+int temp_var_counter=0;
+char *f_name="_F";
+int temp_func_counter=0;
 
 
 /*Arxikopoiei ton symbol table me table
@@ -127,6 +131,10 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
                 newEntry->scope_list_next=temp->scope_list_next;
                 temp=newEntry;
                 ScopeListHead=temp;
+        }
+        else if(newEntry->scope < temp->scope){
+            newEntry->scope_list_next=ScopeListHead;
+            ScopeListHead=newEntry;
         }
         else if(newEntry->scope > temp->scope){                                            //vriskoume se poio scope einai
             while((temp!=NULL) && (newEntry->scope > temp->scope)){
@@ -430,4 +438,30 @@ int change_type(char *name){
     find_scope=find_scope->scope_list_next;
   }
   return 1;
+}
+
+char* concat(const char *s1, const char *s2){
+  char *result = malloc(strlen(s1)+strlen(s2)+1);
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
+}
+
+char *temp_name() {
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_var_counter);
+  yo=concat(t_name,s);
+  temp_var_counter++;
+  return yo;
+}
+
+
+char *temp_name_func() {
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_func_counter);
+  yo=concat(f_name,s);
+  temp_func_counter++;
+  return yo;
 }
