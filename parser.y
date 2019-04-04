@@ -296,7 +296,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
 	|		MINUS expr %prec UMINUS	{
         fprintf(GOUT,"term: -expr\n");
-        emit(uminus,$2,NULL,$2,0,yylineno);
+        struct expr *temp_const;
+        temp_const=(struct expr*)malloc(sizeof(struct expr));
+        temp_const->type=arithexpr_e;
+
+        emit(uminus,temp_const,NULL,temp_const,0,yylineno);
       }
 	|		NOT expr {
         fprintf(GOUT,"term: ! expr\n");

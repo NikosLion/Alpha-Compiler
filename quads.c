@@ -289,4 +289,41 @@ int make_bool(struct expr *expr){
       return 0;
     }
   }
+  else if(expr->type==var_e){
+    if(expr->int_real==1){
+      if(expr->value.intValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    else if(expr->int_real==0){
+      if(expr->value.realValue!=0){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    else if(expr->int_real==-1){
+      if(expr->value.stringValue!=""){
+        return 1;
+      }
+      else{
+        return 0;
+      }
+    }
+    else if(expr->int_real==-2){
+      if(expr->value.boolean==1){
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    else {
+      return -123; ///ki alles periptwseis gia pinakes
+    }
+  }
 }
