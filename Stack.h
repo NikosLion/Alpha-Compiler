@@ -1,4 +1,6 @@
 
+//stack for offset
+
 typedef struct scopeSpace_stack{
   unsigned offset;
   struct scopeSpace_stack* next;
