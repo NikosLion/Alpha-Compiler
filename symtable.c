@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include"symtable.h"
@@ -8,44 +7,50 @@
 struct SymbolTableEntry *ScopeListHead=NULL;
 struct SymbolTableEntry *newEntry=NULL;
 struct FuncArg *newArg=NULL;
+char *t_name="_T";
+int temp_var_counter=0;
+char *f_name="_F";
+int temp_func_counter=0;
+char *return_name="_R";
+int temp_return_counter=0;
 
-
+//////////////////////////////////////////////////////////////
 /*Arxikopoiei ton symbol table me table
   me ta library functions.
 */
 void init_symTable(){
-    insert_SymTable("print",0,0,5);
-    insert_SymTable("input",0,0,5);
-    insert_SymTable("objectmemberkeys",0,0,5);
-    insert_SymTable("objectcopy",0,0,5);
-    insert_SymTable("totalarguments",0,0,5);
-    insert_SymTable("argument",0,0,5);
-    insert_SymTable("typeof",0,0,5);
-    insert_SymTable("strtonum",0,0,5);
-    insert_SymTable("sqrt",0,0,5);
-    insert_SymTable("cos",0,0,5);
-    insert_SymTable("sin",0,0,5);
+    insert_SymTable("print",0,0,5,0,programvar);
+    insert_SymTable("input",0,0,5,0,programvar);
+    insert_SymTable("objectmemberkeys",0,0,5,0,programvar);
+    insert_SymTable("objectcopy",0,0,5,0,programvar);
+    insert_SymTable("totalarguments",0,0,5,0,programvar);
+    insert_SymTable("argument",0,0,5,0,programvar);
+    insert_SymTable("typeof",0,0,5,0,programvar);
+    insert_SymTable("strtonum",0,0,5,0,programvar);
+    insert_SymTable("sqrt",0,0,5,0,programvar);
+    insert_SymTable("cos",0,0,5,0,programvar);
+    insert_SymTable("sin",0,0,5,0,programvar);
 }
 
+/////////////////////////////////////////////////////
 /*Typwnei ta periexomena tou symbol table
   ana scope.
 */
-void print_symTable(){
+void print_symTable(FILE* out){
 
     SymbolTableEntry *fasi=ScopeListHead;
     SymbolTableEntry *fasi2=ScopeListHead;
     struct FuncArg *temp_args;
 
-    printf("    \n");
+    fprintf(out,"    \n");
 
     while(fasi!=NULL){
-        printf("%s  %d  \n","Scope : ",fasi->scope);
-        printf("    \n");
+        fprintf(out,"%s  %d  \n","Scope : ",fasi->scope);
+        fprintf(out,"    \n");
         fasi2=fasi;
         while(fasi2!=NULL){
-            printf("Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
+            fprintf(out,"Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
            /*
-
            temp_args=fasi2->args;
             if((fasi2->type==4) && (temp_args!=NULL)){
               while(temp_args!=NULL){
@@ -53,20 +58,20 @@ void print_symTable(){
                 temp_args=temp_args->next;
               }
             }
-
             */
             fasi2=fasi2->scope_next;
         }
-        printf("\n");
+        fprintf(out,"\n");
         fasi=fasi->scope_list_next;
     }
-    printf("    \n");
+    fprintf(out,"    \n");
 }
 
+//////////////////////////////////////////////////////////////////////////
 /*Apenergopoiei ta symvola sto scope pou
   dinetai mesw tou isActive field.
 */
-void HideVar(int scope){
+int HideVar(int scope){
     SymbolTableEntry *dif_scope_temp=ScopeListHead;
     SymbolTableEntry *dif_scope_prev=ScopeListHead;
     SymbolTableEntry *same_scope_temp=ScopeListHead;
@@ -75,29 +80,26 @@ void HideVar(int scope){
         dif_scope_prev=dif_scope_temp;
         dif_scope_temp=dif_scope_temp->scope_list_next;
     }
-    if((dif_scope_temp!=NULL) && (dif_scope_temp->scope==scope)){
+    if(dif_scope_temp==NULL){
+        return -1;
+    }
+    else if(dif_scope_temp->scope==scope){
       dif_scope_prev=dif_scope_temp;
     }
-    else if(dif_scope_temp==NULL){
-        return;
+    same_scope_temp=dif_scope_prev;
+    while(same_scope_temp!=NULL){
+        same_scope_temp->isActive=0;
+        same_scope_temp=same_scope_temp->scope_next;
     }
-    else {
-        same_scope_temp=dif_scope_prev;
-        while(same_scope_temp!=NULL){
-            same_scope_temp->isActive=0;
-            same_scope_temp=same_scope_temp->scope_next;
-        }
-    }
-    return;
+    return 0;
 }
 
-
-
+/////////////////////////////////////////////////////////
 /*Eisagwgh neou symvolou ston symbol table me
   parametrous to onoma, to scope, th grammh pou
   vrethike to symvolo kai ton typo tou.
 */
-void insert_SymTable(char *name,int scope,int line,int enu){
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space){
 
     newEntry=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
@@ -111,6 +113,8 @@ void insert_SymTable(char *name,int scope,int line,int enu){
     newEntry->scope=scope;
     newEntry->line=line;
     newEntry->type=enu;
+    newEntry->offset=offset;
+    newEntry->space=space;
 
     if(ScopeListHead==NULL){
         ScopeListHead=newEntry;
@@ -121,22 +125,26 @@ void insert_SymTable(char *name,int scope,int line,int enu){
         SymbolTableEntry *temp=ScopeListHead;
         SymbolTableEntry *prev=temp;
 
-        if(temp->scope == newEntry->scope){                                               //insert sthn lista tou idiou scope gia scope 0
+        if(temp->scope == newEntry->scope){                                     //insert sthn lista tou idiou scope gia scope 0
                 newEntry->scope_next=temp;
                 newEntry->scope_list_next=temp->scope_list_next;
                 temp=newEntry;
                 ScopeListHead=temp;
         }
-        else if(newEntry->scope > temp->scope){                                            //vriskoume se poio scope einai
+        else if(newEntry->scope < temp->scope){
+            newEntry->scope_list_next=ScopeListHead;
+            ScopeListHead=newEntry;
+        }
+        else if(newEntry->scope > temp->scope){                                 //vriskoume se poio scope einai
             while((temp!=NULL) && (newEntry->scope > temp->scope)){
                 prev=temp;
                 temp=temp->scope_list_next;
             }
-            if(temp==NULL){                                                             //create first node for this scope
+            if(temp==NULL){                                                     //create first node for this scope
                 prev->scope_list_next=newEntry;
                 newEntry->scope_list_next=NULL;
             }
-            else if(temp->scope == newEntry->scope){                                  //insert sthn lista tou idiou scope
+            else if(temp->scope == newEntry->scope){                            //insert sthn lista tou idiou scope
                 newEntry->scope_next=temp;
                 newEntry->scope_list_next=temp->scope_list_next;
                 temp=newEntry;
@@ -153,7 +161,7 @@ void insert_SymTable(char *name,int scope,int line,int enu){
     return;
 }
 
-
+////////////////////////////////////////////////////////////
 /*Lookup sto scope pou dinetai me vash to onoma
   kai ton typo tou symvolou pou psaxnoume.Epistrefei
   1 an vrethei to symvolo, 0 an oxi.
@@ -182,6 +190,7 @@ int lookup_symTable(char *name,int scope,int type){
     return 0;
 }
 
+///////////////////////////////////////////////////////////////
 /*Lookup sto scope pou dinetai gia active
   symvola.An vrethei to symvolo epistrefei to
   scope pou vrethike.An den uparxei to scope
@@ -194,7 +203,6 @@ int lookup_symTable2(char *name,int scope,int type){
     SymbolTableEntry *temp=ScopeListHead;
 
     int found_scope=-1;
-
 
     while((find_scope!=NULL)&&(find_scope->scope<scope)){
         find_scope=find_scope->scope_list_next;
@@ -215,6 +223,7 @@ int lookup_symTable2(char *name,int scope,int type){
     return -2;
 }
 
+////////////////////////////////////////////////////////
 /*Elegxei an to teleutaio symvolo pou egine eisagwgh
   sto scope pou dinetai einai synarthsh.
 */
@@ -233,6 +242,7 @@ int isUserFunc(int scope){
     }
 }
 
+/////////////////////////////////////////////////////
 /*Elegxei an to onoma pou dinetai sto
   sygkekrimeno scope antistoixei se onoma
   synarthshs.Ean nai epistrefei 1, diaforetika
@@ -258,6 +268,7 @@ int checkFuncName(char *name,int scope){
     return 0;
 }
 
+////////////////////////////////////////////////////////
 /*Epistrefei 1 ean to onoma pou dinetai antistoixei
   se onoma synarthshs vivliothikis, diaforetika
   epistrefei 0.
@@ -300,39 +311,7 @@ int look_lib_func(char *name){
     return lib_name;
 }
 
-/*Eisagwgh neou symvolou typou formal argument
-  ws neou komvou sth lista symvolwn enos function.
-*/
-void insert_funcArg(int scope,int line,char *name){
-
-    newArg=(struct FuncArg*)malloc(sizeof(struct FuncArg));
-    SymbolTableEntry *temp=ScopeListHead;
-    int t=0;
-
-    while((temp!=NULL) && (temp->scope_list_next!=NULL) && (t==0)){
-        if(temp->scope < scope){
-            temp=temp->scope_list_next;
-            t=1;
-        }
-    }
-
-    newArg->isActive=1;
-    newArg->name=strdup(name);
-    newArg->scope=scope;
-    newArg->line=line;
-    newArg->type=3;
-    newArg->next=NULL;
-
-    if(temp->args==NULL){
-        temp->args=newArg;
-    }
-    else{
-        newArg->next=temp->args;
-        temp->args=newArg;
-    }
-    return;
-}
-
+/////////////////////////////////////////////////////////
 /*Epistrefei -1 an to "name" sygkrouetai
   me kapoio apo ta library function,
   1 an vrethei formal argument me to idio onoma
@@ -361,6 +340,7 @@ int lookup_funcArgs(int scope,char *name){
     return 0;							//den to vrhke, ara proxwraei h insert
 }
 
+//////////////////////////////////////////////////////////
 /*Diagrafei ta symvola pou eisixthisan ston symbol table
   kata tin klhsh mias synarthshs.
 */
@@ -412,6 +392,7 @@ int delete_call_args(int scope,int call_args_counter){
     }
 }
 
+////////////////////////////////////////////////////////////////
 /*Allazei to onoma tou symvolou "name" se
   "new_name". Kaleitai otan to deksiotero
   expr se stoixeio indexedelem einai typou
@@ -438,6 +419,7 @@ int change_name(char *name,char *new_name,int scope){
   return 0;
 }
 
+/////////////////////////////////////////////////////////
 /*Allazei ton typo tou symvolou "name" se
   "userfunc". Kaleitai otan to deksio melos
   enos assignexpr einai typou synarthshs wste
@@ -461,4 +443,44 @@ int change_type(char *name){
     find_scope=find_scope->scope_list_next;
   }
   return 1;
+}
+
+///////////////////////////////////////////////////////
+//concatanate 2 strings and return char*
+char* concat(const char *s1, const char *s2){
+  char *result = malloc(strlen(s1)+strlen(s2)+1);
+  strcpy(result, s1);
+  strcat(result, s2);
+  return result;
+}
+
+//////////////////////////////////////////////////
+//gives temp var name
+char *temp_name() {
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_var_counter);
+  yo=concat(t_name,s);
+  temp_var_counter++;
+  return yo;
+}
+
+/////////////////////////////////////////////////
+//gives func name
+char *temp_name_func() {
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_func_counter);
+  yo=concat(f_name,s);
+  temp_func_counter++;
+  return yo;
+}
+/////////////////////////////////////////////////
+char* temp_name_return(){
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_return_counter);
+  yo=concat(return_name,s);
+  temp_return_counter++;
+  return yo;
 }
