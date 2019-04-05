@@ -11,6 +11,8 @@ char *t_name="_T";
 int temp_var_counter=0;
 char *f_name="_F";
 int temp_func_counter=0;
+char *return_name="_R";
+int temp_return_counter=0;
 
 //////////////////////////////////////////////////////////////
 /*Arxikopoiei ton symbol table me table
@@ -69,7 +71,7 @@ void print_symTable(FILE* out){
 /*Apenergopoiei ta symvola sto scope pou
   dinetai mesw tou isActive field.
 */
-void HideVar(int scope){
+int HideVar(int scope){
     SymbolTableEntry *dif_scope_temp=ScopeListHead;
     SymbolTableEntry *dif_scope_prev=ScopeListHead;
     SymbolTableEntry *same_scope_temp=ScopeListHead;
@@ -78,20 +80,18 @@ void HideVar(int scope){
         dif_scope_prev=dif_scope_temp;
         dif_scope_temp=dif_scope_temp->scope_list_next;
     }
-    if((dif_scope_temp!=NULL) && (dif_scope_temp->scope==scope)){
+    if(dif_scope_temp==NULL){
+        return -1;
+    }
+    else if(dif_scope_temp->scope==scope){
       dif_scope_prev=dif_scope_temp;
     }
-    else if(dif_scope_temp==NULL){
-        return;
+    same_scope_temp=dif_scope_prev;
+    while(same_scope_temp!=NULL){
+        same_scope_temp->isActive=0;
+        same_scope_temp=same_scope_temp->scope_next;
     }
-    else {
-        same_scope_temp=dif_scope_prev;
-        while(same_scope_temp!=NULL){
-            same_scope_temp->isActive=0;
-            same_scope_temp=same_scope_temp->scope_next;
-        }
-    }
-    return;
+    return 0;
 }
 
 /////////////////////////////////////////////////////////
@@ -203,7 +203,6 @@ int lookup_symTable2(char *name,int scope,int type){
     SymbolTableEntry *temp=ScopeListHead;
 
     int found_scope=-1;
-
 
     while((find_scope!=NULL)&&(find_scope->scope<scope)){
         find_scope=find_scope->scope_list_next;
@@ -474,5 +473,14 @@ char *temp_name_func() {
   sprintf(s,"%d",temp_func_counter);
   yo=concat(f_name,s);
   temp_func_counter++;
+  return yo;
+}
+/////////////////////////////////////////////////
+char* temp_name_return(){
+  char s[20];
+  char *yo;
+  sprintf(s,"%d",temp_return_counter);
+  yo=concat(return_name,s);
+  temp_return_counter++;
   return yo;
 }

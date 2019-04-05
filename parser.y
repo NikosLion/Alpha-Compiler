@@ -45,10 +45,10 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call
 %type<argument_t> idlist
 %type<stringValue> ifstmt whilestmt forstmt returnstmt block  ifprefix
-%type<stringValue>  call objectdef  member
+%type<stringValue>   objectdef  member
 %type<stringValue> elist normcall methodcall callsuffix indexed indexedelem
 
 %right		  ASSIGN
@@ -227,25 +227,181 @@ arithmeticop: expr PLUS expr  {
 relativeop:		expr GREATER expr  {
                 fprintf(GOUT,"op: expr > expr\n");
 
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->name=temp_name();
+                temp->type=var_e;
+
+                struct expr *temp_true;
+                temp_true=(struct expr*)malloc(sizeof(struct expr));
+                temp_true->type=constbool_e;
+                temp_true->value.boolean=1;
+                temp_true->int_real=-2;
+
+                struct expr *temp_false;
+                temp_false=(struct expr*)malloc(sizeof(struct expr));
+                temp_false->type=constbool_e;
+                temp_false->value.boolean=0;
+                temp_false->int_real=-2;
+
+                emit(if_greater,$1,$3,NULL,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(assign,temp_true,NULL,temp,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(assign,temp_false,NULL,temp,0,yylineno);
+
               }
 		  |		expr GR_EQUAL expr {
             fprintf(GOUT,"op: expr >= expr\n");
+
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            emit(if_geatereq,$1,$3,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
 
           }
 		  |		expr LESS expr {
             fprintf(GOUT,"op: expr < expr\n");
 
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            emit(if_less,$1,$3,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
+
           }
 		  |		expr LESS_EQUAL expr {
             fprintf(GOUT,"op: expr <= expr\n");
+
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            emit(if_lesseq,$1,$3,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
 
           }
 		  |		expr EQUALS expr {
             fprintf(GOUT,"op: expr == expr\n");
 
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            emit(if_eq,$1,$3,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
+
           }
 		  |		expr NOT_EQUALS expr {
             fprintf(GOUT,"op: expr != expr\n");
+
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            emit(if_noteq,$1,$3,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
 
           }
 		  ;
@@ -259,14 +415,35 @@ booleanop:		expr AND expr {
                 sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
                 temp->sym=sym;
                 temp->sym->name=temp_name();
-                temp->type=boolexpr_e;
+                temp->type=var_e;
+
+                struct expr *temp_true;
+                temp_true=(struct expr*)malloc(sizeof(struct expr));
+                temp_true->type=constbool_e;
+                temp_true->value.boolean=1;
+                temp_true->int_real=-2;
+
+                struct expr *temp_false;
+                temp_false=(struct expr*)malloc(sizeof(struct expr));
+                temp_false->type=constbool_e;
+                temp_false->value.boolean=0;
+                temp_false->int_real=-2;
+
                 if(scope==0){
                   insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
                 }
                 else{
                   insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
                 }
-                emit(and,$1,$3,temp,0,yylineno);
+
+                emit(if_eq,$1,temp_true,NULL,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(if_eq,$3,temp_true,NULL,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(assign,temp_true,NULL,temp,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(assign,temp_false,NULL,temp,0,yylineno);
+
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -278,14 +455,35 @@ booleanop:		expr AND expr {
             sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
             temp->sym=sym;
             temp->sym->name=temp_name();
-            temp->type=boolexpr_e;
+            temp->type=var_e;
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
             if(scope==0){
               insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
             }
             else{
               insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
             }
-            emit(or,$1,$3,temp,0,yylineno);
+
+            emit(if_eq,$1,temp_true,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_eq,$3,temp_true,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
+
             $$=temp;
           }
 		 ;
@@ -383,7 +581,15 @@ assignexpr:	lvalue ASSIGN expr{
               }
               $1->type=$3->type;
               $$=$1;
+              struct expr *temp;
+              temp=(struct expr*)malloc(sizeof(struct expr));
+              struct SymbolTableEntry *sym;
+              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              temp->sym=sym;
+              temp->sym->name=temp_name();
+              temp->type=var_e;
               emit(assign,$3,NULL,$1,0,yylineno);
+              emit(assign,$1,NULL,temp,0,yylineno);
           }
 		  ;
 
@@ -477,7 +683,7 @@ lvalue:		IDENTIFIER {
   				type=4;
 				  temp_maloc->sym->name=$1;
 				  temp_maloc->sym->type=type;
-          temp_maloc->type=var_e;
+          temp_maloc->type=programfunc_e;
 				  $$=temp_maloc;
   				break;
   			}
@@ -526,21 +732,18 @@ lvalue:		IDENTIFIER {
 				fprintf(GOUT,"Error at line %d: Local identifier trying to shadow library function: %s\n", yylineno,$2);
 				exit(0);
 			}
-
 			//psaxnoume sto trexon scope
-			if( lookup_symTable($2,scope,2)){
+			if(lookup_symTable2($2,scope,2)!=-2){
 				temp_maloc->sym->name=$2;
 				temp_maloc->sym->type=2;
         temp_maloc->type=var_e;
 				$$=temp_maloc;
-				break;
 			}
-			else if(lookup_symTable($2,scope,4)){
+			else if(lookup_symTable2($2,scope,4)!=-2){
 				temp_maloc->sym->name=$2;
 				temp_maloc->sym->type=4;
         temp_maloc->type=programfunc_e;
 				$$=temp_maloc;
-				break;
 			}
 			//kanoume eisagwgh ston ST agnowntas to
 			//keyword "local" an eimaste se scope 0
@@ -612,23 +815,58 @@ member:		lvalue DOT IDENTIFIER			{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
 
 call:		lvalue callsuffix {
           fprintf(GOUT,"call: lvalue callsuffix\n");
-          if(($1->type!=4) && (!look_lib_func($1->sym->name))){
+          if(($1->type!=programfunc_e) && (!look_lib_func($1->sym->name))){
             fprintf(GOUT,"Error at line %d: Invalid call\n",yylineno);
             exit(0);
           }
-        // delete_call_args(scope,call_args_counter);
-
+          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
+          emit(call,NULL,NULL,$1,0,yylineno);
+
+          struct expr *new_ret;
+          new_ret=(struct expr*)malloc(sizeof(struct expr));
+          struct SymbolTableEntry *sym;
+          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+          new_ret->sym=sym;
+          new_ret->type=var_e;
+          new_ret->sym->name=temp_name_return();
+
+          emit(getretval,NULL,NULL,new_ret,0,yylineno);
+          $$=new_ret;
         }
     |		L_PARENTHESIS funcdef R_PARENTHESIS L_PARENTHESIS elist R_PARENTHESIS	{
           fprintf(GOUT,"call: ( funcdef ) ( elist )\n");
-        //  delete_call_args(scope,call_args_counter);
+          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
+          emit(call,NULL,NULL,$2,0,yylineno);
+
+          struct expr *new_ret;
+          new_ret=(struct expr*)malloc(sizeof(struct expr));
+          struct SymbolTableEntry *sym;
+          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+          new_ret->sym=sym;
+          new_ret->type=var_e;
+          new_ret->sym->name=temp_name_return();
+
+          emit(getretval,NULL,NULL,new_ret,0,yylineno);
+          $$=new_ret;
         }
     | 	call L_PARENTHESIS elist R_PARENTHESIS {
           fprintf(GOUT,"call: ( elist )\n");
-        //  delete_call_args(scope,call_args_counter);
+          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
+          emit(call,NULL,NULL,$1,0,yylineno);
+
+          struct expr *new_ret;
+          new_ret=(struct expr*)malloc(sizeof(struct expr));
+          struct SymbolTableEntry *sym;
+          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+          new_ret->sym=sym;
+          new_ret->type=var_e;
+          new_ret->sym->name=temp_name_return();
+
+          emit(getretval,NULL,NULL,new_ret,0,yylineno);
+          $$=new_ret;
         }
     ;
 
@@ -645,10 +883,76 @@ methodcall:	DOUBLE_DOT IDENTIFIER L_PARENTHESIS elist R_PARENTHESIS {fprintf(GOU
 elist:		expr {
             fprintf(GOUT,"elist: expr\n");
             call_args_counter++;
+            struct expr *new_param;
+            new_param=(struct expr*)malloc(sizeof(struct expr));
+
+            if($1->type==var_e){
+              struct SymbolTableEntry *sym;
+              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              new_param->sym=sym;
+              new_param->type=var_e;
+              new_param->sym->name=$1->sym->name;
+            }
+            else{
+              if($1->int_real==0){
+                new_param->value.realValue=$1->value.realValue;
+                new_param->type=constnum_e;
+                new_param->int_real=0;
+              }
+              else if($1->int_real==1){
+                new_param->value.intValue=$1->value.intValue;
+                new_param->type=constnum_e;
+                new_param->int_real=1;
+              }
+              else if($1->int_real==-1){
+                new_param->value.stringValue=$1->value.stringValue;
+                new_param->type=conststring_e;
+                new_param->int_real=-1;
+              }
+              else if($1->int_real==-2){
+                new_param->value.boolean=$1->value.boolean;
+                new_param->type=constbool_e;
+                new_param->int_real=-2;
+              }
+            }
+            emit(param,new_param,NULL,NULL,0,yylineno);
           }
      |		elist COMMA expr{
             fprintf(GOUT,"elist: elist, expr\n");
             call_args_counter++;
+            struct expr *new_param;
+            new_param=(struct expr*)malloc(sizeof(struct expr));
+
+            if($3->type==var_e){
+              struct SymbolTableEntry *sym;
+              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              new_param->sym=sym;
+              new_param->type=var_e;
+              new_param->sym->name=$3->sym->name;
+            }
+            else{
+              if($3->int_real==0){
+                new_param->value.realValue=$3->value.realValue;
+                new_param->type=constnum_e;
+                new_param->int_real=0;
+              }
+              else if($3->int_real==1){
+                new_param->value.intValue=$3->value.intValue;
+                new_param->type=constnum_e;
+                new_param->int_real=1;
+              }
+              else if($3->int_real==-1){
+                new_param->value.stringValue=$3->value.stringValue;
+                new_param->type=conststring_e;
+                new_param->int_real=-1;
+              }
+              else if($3->int_real==-2){
+                new_param->value.boolean=$3->value.boolean;
+                new_param->type=constbool_e;
+                new_param->int_real=-2;
+              }
+            }
+            emit(param,new_param,NULL,NULL,0,yylineno);
           }
      |    {fprintf(GOUT,"elist: \n");}
      ;
@@ -676,7 +980,8 @@ block:		L_CURLY {
   					scope++;
 				  }
 				  program R_CURLY{
-            HideVar(scope--);
+          HideVar(scope);
+          scope--;
           }
      ;
 
@@ -821,6 +1126,7 @@ funcdef:	FUNCTION IDENTIFIER {
                           csgo=$1;
                           new_string->value.stringValue=csgo;
                           new_string->type=conststring_e;
+                          new_string->int_real=-1;
                           $$=new_string;
                         }
       |		NIL				{
@@ -830,6 +1136,7 @@ funcdef:	FUNCTION IDENTIFIER {
 
                       new_null->value.boolean=0;
                       new_null->type=nil_e;
+                      new_null->int_real=-2;
                       $$=new_null;
                     }
       |		TRUE			{
@@ -839,6 +1146,7 @@ funcdef:	FUNCTION IDENTIFIER {
 
                       new_boolean->value.boolean=1;
                       new_boolean->type=constbool_e;
+                      new_boolean->int_real=-2;
                       $$=new_boolean;
                     }
       |		FALSE			{
@@ -848,6 +1156,7 @@ funcdef:	FUNCTION IDENTIFIER {
 
                       new_boolean->value.boolean=0;
                       new_boolean->type=constbool_e;
+                      new_boolean->int_real=-2;
                       $$=new_boolean;
                     }
       ;
@@ -865,6 +1174,7 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
+        /*
           struct expr *new_arg;
           new_arg=(struct expr*)malloc(sizeof(struct expr));
           struct SymbolTableEntry *sym;
@@ -873,7 +1183,7 @@ idlist:		IDENTIFIER {
           new_arg->sym->name=$1;
           new_arg->type=var_e;
           emit(param,NULL,NULL,new_arg,0,yylineno);
-
+        */
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 
@@ -894,6 +1204,7 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
+          /*
           struct expr *new_arg;
           new_arg=(struct expr*)malloc(sizeof(struct expr));
           struct SymbolTableEntry *sym;
@@ -902,7 +1213,7 @@ idlist:		IDENTIFIER {
           new_arg->sym->name=$3;
           new_arg->type=var_e;
           emit(param,NULL,NULL,new_arg,0,yylineno);
-
+          */
           incCurrScopeOffset();
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}

@@ -152,9 +152,9 @@ void print_quads(FILE* out){
         else if(temp->arg1->type==nil_e){
           fprintf(out,"null\t\t\t");
         }
-        else{
+        else if(temp->arg1->type==constnum_e){
           if(temp->arg1->int_real==0){
-            fprintf(out,"%f\\t\t\t",temp->arg1->value.realValue);
+            fprintf(out,"%f\t\t\t",temp->arg1->value.realValue);
           }
           else if(temp->arg1->int_real==1){
             fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
@@ -184,7 +184,7 @@ void print_quads(FILE* out){
         else if(temp->arg2->type==nil_e){
           fprintf(out,"null\t\t\t");
         }
-        else{
+        else if(temp->arg2->type==constnum_e){
           if(temp->arg2->int_real==0){
             fprintf(out,"%f\t\t\t",temp->arg2->value.realValue);
           }
