@@ -200,7 +200,7 @@ void print_quads(FILE* out){
     else{
       fprintf(out,"\t\t\t");
     }
-    if((temp->op==if_eq)||(temp->op==if_noteq)||(temp->op==if_lesseq)||(temp->op==if_geatereq)||(temp->op==if_less)||(temp->op==if_greater)||(temp->op==jump)){
+    if((temp->op==if_eq)||(temp->op==if_noteq)||(temp->op==if_lesseq)||(temp->op==if_greatereq)||(temp->op==if_less)||(temp->op==if_greater)||(temp->op==jump)){
       fprintf(out,"%d\t\t",temp->label);
     }
     else{

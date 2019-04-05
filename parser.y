@@ -247,12 +247,12 @@ relativeop:		expr GREATER expr  {
                 temp_false->value.boolean=0;
                 temp_false->int_real=-2;
 
-                emit(if_greater,$1,$3,NULL,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-                emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(if_greater,$1,$3,NULL,currQuad+3,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
+                emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+                emit(assign,temp_true,NULL,temp,0,yylineno);
 
+                $$=temp;
               }
 		  |		expr GR_EQUAL expr {
             fprintf(GOUT,"op: expr >= expr\n");
@@ -277,12 +277,12 @@ relativeop:		expr GREATER expr  {
             temp_false->value.boolean=0;
             temp_false->int_real=-2;
 
-            emit(if_geatereq,$1,$3,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_greatereq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
 
+            $$=temp;
           }
 		  |		expr LESS expr {
             fprintf(GOUT,"op: expr < expr\n");
@@ -307,12 +307,12 @@ relativeop:		expr GREATER expr  {
             temp_false->value.boolean=0;
             temp_false->int_real=-2;
 
-            emit(if_less,$1,$3,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_less,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
 
+            $$=temp;
           }
 		  |		expr LESS_EQUAL expr {
             fprintf(GOUT,"op: expr <= expr\n");
@@ -337,12 +337,12 @@ relativeop:		expr GREATER expr  {
             temp_false->value.boolean=0;
             temp_false->int_real=-2;
 
-            emit(if_lesseq,$1,$3,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_lesseq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
 
+            $$=temp;
           }
 		  |		expr EQUALS expr {
             fprintf(GOUT,"op: expr == expr\n");
@@ -367,12 +367,12 @@ relativeop:		expr GREATER expr  {
             temp_false->value.boolean=0;
             temp_false->int_real=-2;
 
-            emit(if_eq,$1,$3,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_eq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
 
+            $$=temp;
           }
 		  |		expr NOT_EQUALS expr {
             fprintf(GOUT,"op: expr != expr\n");
@@ -397,12 +397,12 @@ relativeop:		expr GREATER expr  {
             temp_false->value.boolean=0;
             temp_false->int_real=-2;
 
-            emit(if_noteq,$1,$3,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_noteq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_true,NULL,temp,0,yylineno);
 
+            $$=temp;
           }
 		  ;
 
@@ -436,12 +436,12 @@ booleanop:		expr AND expr {
                   insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
                 }
 
-                emit(if_eq,$1,temp_true,NULL,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-                emit(if_eq,$3,temp_true,NULL,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(if_eq,$1,temp_true,NULL,currQuad+2,yylineno);
+                emit(jump,NULL,NULL,NULL,currQuad+5,yylineno);
+                emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
+                emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
                 emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
+                emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
 
                 $$=temp;
@@ -476,12 +476,11 @@ booleanop:		expr AND expr {
               insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
             }
 
-            emit(if_eq,$1,temp_true,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(if_eq,$3,temp_true,NULL,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(if_eq,$1,temp_true,NULL,currQuad+3,yylineno);
+            emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
 
             $$=temp;

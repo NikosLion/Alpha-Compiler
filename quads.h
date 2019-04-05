@@ -21,7 +21,7 @@ enum iopcode{
   mul,      if_eq,        call,         tablegetelem,
   Div,      if_noteq,     param,        tablesetelem,
   mod,      if_lesseq,    Return,
-  uminus,   if_geatereq,  getretval
+  uminus,   if_greatereq,  getretval
 };
 
 enum expr_t{
