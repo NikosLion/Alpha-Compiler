@@ -43,9 +43,9 @@ void print_symTable(FILE* out){
     struct FuncArg *temp_args;
 
     fprintf(out,"    \n");
-
+    fprintf(out,"####################################################\n\n");
     while(fasi!=NULL){
-        fprintf(out,"%s  %d  \n","Scope : ",fasi->scope);
+        fprintf(out,"%s %d  <<<<-------\n","  ------->>>> Scope : ",fasi->scope);
         fprintf(out,"    \n");
         fasi2=fasi;
         while(fasi2!=NULL){

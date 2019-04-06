@@ -120,16 +120,24 @@ char* return_op(int op){
 
 ////////////////////////////////////////////
 void print_quads(FILE* out){
+  fprintf(out,"######################################################################################################################################\n\n");
 	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
   int i=0;
 	for(i;i<currQuad;i++){
-    fprintf(out,"\n");
+    fprintf(out,"_____________________________________________________________________________________________________________________________________\n");
 		struct quad* temp=quads+i;
     if(temp==NULL){
       fprintf(out,"Empty Quads\n");
       break;
     }
-    fprintf(out,"%d\t\t%s\t\t\t",i,return_op(temp->op));
+    int j=strlen(return_op(temp->op));
+    if(j<8){
+      fprintf(out,"%d\t\t%s\t\t\t",i,return_op(temp->op));
+    }
+    else{
+      fprintf(out,"%d\t\t%s\t\t",i,return_op(temp->op));
+    }
+
     if(temp->result!=NULL){
       fprintf(out,"%s\t\t\t",temp->result->sym->name);
     }
@@ -206,9 +214,10 @@ void print_quads(FILE* out){
     else{
       fprintf(out,"\t\t");
     }
-    fprintf(out,"%d\t\t",temp->line);
+    fprintf(out,"%d\t\n",temp->line);
+
   }
-  fprintf(out,"\n\n");
+  fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
 
