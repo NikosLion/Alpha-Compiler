@@ -249,7 +249,7 @@ relativeop:		expr GREATER expr  {
 
                 emit(if_greater,$1,$3,NULL,currQuad+3,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
                 emit(assign,temp_true,NULL,temp,0,yylineno);
 
                 $$=temp;
@@ -279,7 +279,7 @@ relativeop:		expr GREATER expr  {
 
             emit(if_greatereq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
 
             $$=temp;
@@ -309,7 +309,7 @@ relativeop:		expr GREATER expr  {
 
             emit(if_less,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
 
             $$=temp;
@@ -339,7 +339,7 @@ relativeop:		expr GREATER expr  {
 
             emit(if_lesseq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
 
             $$=temp;
@@ -369,7 +369,7 @@ relativeop:		expr GREATER expr  {
 
             emit(if_eq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
 
             $$=temp;
@@ -399,7 +399,7 @@ relativeop:		expr GREATER expr  {
 
             emit(if_noteq,$1,$3,NULL,currQuad+3,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
 
             $$=temp;
@@ -495,13 +495,26 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         fprintf(GOUT,"term: -expr\n");
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=arithexpr_e;
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp_const->sym=sym;
+        temp_const->type=var_e;
+        temp_const->sym->name=temp_name();
 
-        emit(uminus,temp_const,NULL,temp_const,0,yylineno);
+        emit(uminus,$2,NULL,temp_const,0,yylineno);
+        $$=temp_const;
       }
 	|		NOT expr {
         fprintf(GOUT,"term: ! expr\n");
-        emit(not,$2,NULL,$2,0,yylineno);
+        struct expr *temp_not;
+        temp_not=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp_not->sym=sym;
+        temp_not->type=var_e;
+        temp_not->sym->name=temp_name();
+        emit(not,$2,NULL,temp_not,0,yylineno);
+        $$=temp_not;
       }
 	|		INCR lvalue{
         fprintf(GOUT,"term: ++lvalue\n");
@@ -511,10 +524,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=arithexpr_e;
+        temp_const->type=constnum_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(add,temp_const,$2,$2,0,yylineno);
+        $$=$2;
       }
 	|		lvalue INCR	{
         fprintf(GOUT,"term: lvalue++\n");
@@ -524,10 +538,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=arithexpr_e;
+        temp_const->type=constnum_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(add,$1,temp_const,$1,0,yylineno);
+        $$=$1;
       }
 	|		DECR lvalue{
         fprintf(GOUT,"term: --lvalue\n");
@@ -537,10 +552,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=arithexpr_e;
+        temp_const->type=constnum_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(sub,temp_const,$2,$2,0,yylineno);
+        $$=$2;
       }
 	|		lvalue DECR{
         fprintf(GOUT,"term: lvalue--\n");
@@ -550,10 +566,11 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         }
         struct expr *temp_const;
         temp_const=(struct expr*)malloc(sizeof(struct expr));
-        temp_const->type=arithexpr_e;
+        temp_const->type=constnum_e;
         temp_const->value.intValue=1;
         temp_const->int_real=1;
         emit(sub,$1,temp_const,$1,0,yylineno);
+        $$=$1;
       }
 	|		primary{
         fprintf(GOUT,"term: primary\n");
@@ -1220,10 +1237,26 @@ idlist:		IDENTIFIER {
 	  |			{fprintf(GOUT,"idlist: \n");}
       ;
 
-ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {fprintf(GOUT,"ifstmt: if ( expr ) stmt\n");}
+ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
+            fprintf(GOUT,"ifstmt: if ( expr ) stmt\n");
+
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
+
+          }
 	    ;
 
-ifstmt: 	ifprefix ELSE stmt	{fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");}
+ifstmt: 	ifprefix ELSE stmt {
+            fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
+
+
+          }
       ;
 
 whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{

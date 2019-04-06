@@ -132,10 +132,10 @@ void print_quads(FILE* out){
     }
     int j=strlen(return_op(temp->op));
     if(j<8){
-      fprintf(out,"%d\t\t%s\t\t\t",i,return_op(temp->op));
+      fprintf(out,"# %d\t\t%s\t\t\t",i,return_op(temp->op));
     }
     else{
-      fprintf(out,"%d\t\t%s\t\t",i,return_op(temp->op));
+      fprintf(out,"# %d\t\t%s\t\t",i,return_op(temp->op));
     }
 
     if(temp->result!=NULL){
