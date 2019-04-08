@@ -4,11 +4,16 @@
 #include "quads.h"
 
 
+////////////////////////////////////////////////////////////////////////////
+quad *if_quad;
+
 quad* quads = (quad*) 0;
 
+struct expr *temp_expr;
+struct SymbolTableEntry *t_sym;
 
 
-void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line){
+void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
 
   if(currQuad == total){
     expand();
@@ -114,7 +119,8 @@ char* return_op(int op){
     case 23 : return "uminus";
     case 24 : return "if_geatereq";
     case 25 : return "getretval";
-    default :return "empy quad";
+    case 26 : return "no_op";
+    default :return "emtpy quad";
   }
 }
 
@@ -336,3 +342,27 @@ int make_bool(struct expr *expr){
     }
   }
 }
+////////////////////////////////////////////////////////////////////////
+
+expr* make_if_quad(int label, expr* temp,int r){
+
+  if(r==0){
+    temp_expr=(struct expr*)malloc(sizeof(struct expr));
+    t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+    temp_expr->sym=t_sym;
+    temp_expr->sym->name=temp->sym->name;
+    temp_expr->value.intValue=label-1;
+  }
+  return temp_expr;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void if_backpatch(expr* temp){
+  int i=currQuad-2;
+  struct quad* t_q=quads+i;
+  struct quad* base_quad=quads+(currQuad-1);
+
+  return;
+}
+/////////////////////////////////////////////////////////////////////////

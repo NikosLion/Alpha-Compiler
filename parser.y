@@ -45,9 +45,9 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt
 %type<argument_t> idlist
-%type<stringValue> ifstmt whilestmt forstmt returnstmt block  ifprefix
+%type<stringValue>  whilestmt forstmt returnstmt block
 %type<stringValue>   objectdef  member
 %type<stringValue> elist normcall methodcall callsuffix indexed indexedelem
 
@@ -71,26 +71,32 @@ program:	program stmt	 {fprintf(GOUT,"program: program stmt\n");}
 	     |                 {fprintf(GOUT,"program: \n");}
 	     ;
 
-stmt:	expr SEMICOLON		   {fprintf(GOUT,"stmt: expr ;  \n");}
-    | ifprefix        	   {fprintf(GOUT,"stmt: ifstmt\n");}
-    | ifstmt          	   {fprintf(GOUT,"stmt: ifstmt\n");}
-    | whilestmt       	   {fprintf(GOUT,"stmt: whilestmt\n");}
-    | forstmt         	   {fprintf(GOUT,"stmt: forstmt\n");}
-    | returnstmt      	   {fprintf(GOUT,"stmt: returnstmt\n");}
-    | BREAK SEMICOLON 	   {
-		fprintf(GOUT,"statement: break ;\n");
-		if(inside_loop==0){
-			fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
-            exit(0);
-		}
-	}
+stmt:	expr SEMICOLON  {fprintf(GOUT,"stmt: expr ;  \n");}
+    | ifprefix  {
+        fprintf(GOUT,"stmt: ifprefix\n");
+        if_backpatch($1);
+      }
+    | ifstmt  {
+        fprintf(GOUT,"stmt: ifstmt\n");
+        if_backpatch($1);
+      }
+    | whilestmt {fprintf(GOUT,"stmt: whilestmt\n");}
+    | forstmt {fprintf(GOUT,"stmt: forstmt\n");}
+    | returnstmt  {fprintf(GOUT,"stmt: returnstmt\n");}
+    | BREAK SEMICOLON{
+        fprintf(GOUT,"statement: break ;\n");
+      	if(inside_loop==0){
+      		fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
+                exit(0);
+      	}
+	    }
     | CONTINUE SEMICOLON	 {
-		fprintf(GOUT,"statement: continue ;\n");
-		if(inside_loop==0){
-			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
-            exit(0);
-		}
-	}
+    		fprintf(GOUT,"statement: continue ;\n");
+    		if(inside_loop==0){
+    			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
+                exit(0);
+    		}
+    	}
     | block   {fprintf(GOUT,"stmt: block\n");}
     | funcdef         	   {fprintf(GOUT,"stmt: funcdef\n");}
     | SEMICOLON       	   {fprintf(GOUT,"stmt: SEMICOLON\n");}
@@ -251,6 +257,7 @@ relativeop:		expr GREATER expr  {
                 emit(assign,temp_false,NULL,temp,0,yylineno);
                 emit(jump,NULL,NULL,NULL,0,yylineno);
                 emit(assign,temp_true,NULL,temp,0,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
 
                 $$=temp;
               }
@@ -281,6 +288,7 @@ relativeop:		expr GREATER expr  {
             emit(assign,temp_false,NULL,temp,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
 
             $$=temp;
           }
@@ -311,6 +319,7 @@ relativeop:		expr GREATER expr  {
             emit(assign,temp_false,NULL,temp,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
 
             $$=temp;
           }
@@ -341,6 +350,7 @@ relativeop:		expr GREATER expr  {
             emit(assign,temp_false,NULL,temp,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
 
             $$=temp;
           }
@@ -371,6 +381,7 @@ relativeop:		expr GREATER expr  {
             emit(assign,temp_false,NULL,temp,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
 
             $$=temp;
           }
@@ -401,6 +412,7 @@ relativeop:		expr GREATER expr  {
             emit(assign,temp_false,NULL,temp,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
 
             $$=temp;
           }
@@ -1238,7 +1250,7 @@ idlist:		IDENTIFIER {
       ;
 
 ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
-            fprintf(GOUT,"ifstmt: if ( expr ) stmt\n");
+            fprintf(GOUT,"ifprefix: if ( expr ) stmt\n");
 
             struct expr *temp_true;
             temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -1246,16 +1258,16 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             temp_true->value.boolean=1;
             temp_true->int_real=-2;
 
-            emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            emit(if_eq,$3,temp_true,NULL,0,yylineno);
+            $$=make_if_quad(currQuad,$3,0);
           }
 	    ;
 
 ifstmt: 	ifprefix ELSE stmt {
             fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
-
-
+            emit(no_op,NULL,NULL,NULL,0,yylineno);
+            $$=make_if_quad(currQuad,NULL,1);
           }
       ;
 

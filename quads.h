@@ -7,7 +7,7 @@
 #define NEW_SIZE (EXPAND_SIZE*sizeof(quad)+CURR_SIZE)
 
 unsigned total;
-unsigned int currQuad;
+int currQuad;
 
 unsigned programVarOffset;
 unsigned functionLocalOffset;
@@ -15,13 +15,13 @@ unsigned formalArgOffset;
 unsigned scopeSpaceCounter;
 
 enum iopcode{
-  assign,   and,          if_less,      funcstart,
-  add,      or,           if_greater,   funcend,
-  sub,      not,          jump,         tablecreate,
-  mul,      if_eq,        call,         tablegetelem,
-  Div,      if_noteq,     param,        tablesetelem,
-  mod,      if_lesseq,    Return,
-  uminus,   if_greatereq,  getretval
+  assign,       and,          if_less,      funcstart,
+  add,          or,           if_greater,   funcend,
+  sub,          not,          jump,         tablecreate,
+  mul,          if_eq,        call,         tablegetelem,
+  Div,          if_noteq,     param,        tablesetelem,
+  mod,          if_lesseq,    Return,       uminus,
+  if_greatereq, getretval,    no_op
 };
 
 enum expr_t{
@@ -58,10 +58,12 @@ typedef struct quad{
 }quad;
 
 
-void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line);
+void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line);
 void expand(void);
 void print_quads(FILE* out);
 int make_bool(struct expr *expr);
+expr* make_if_quad(int label, expr* temp,int r);
+void if_backpatch(expr* temp);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
