@@ -62,7 +62,7 @@ void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned 
 void expand(void);
 void print_quads(FILE* out);
 int make_bool(struct expr *expr);
-expr* make_if_quad(int label, expr* temp,int r);
+expr* make_if_quad(int label, expr* temp);
 void if_backpatch(expr* temp);
 
 enum scopespace_t currScopeSpace(void);

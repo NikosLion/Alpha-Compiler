@@ -78,7 +78,9 @@ stmt:	expr SEMICOLON  {fprintf(GOUT,"stmt: expr ;  \n");}
       }
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
+        printf("@@@@@@@@@@@@@@    %s\n",$1->sym->name );
         if_backpatch($1);
+
       }
     | whilestmt {fprintf(GOUT,"stmt: whilestmt\n");}
     | forstmt {fprintf(GOUT,"stmt: forstmt\n");}
@@ -1260,14 +1262,14 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
 
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(if_eq,$3,temp_true,NULL,0,yylineno);
-            $$=make_if_quad(currQuad,$3,0);
+            $$=make_if_quad(currQuad,$3);
+            printf("!!!!!!!!!!!!!!!    %s\n",$$->sym->name );
           }
 	    ;
 
 ifstmt: 	ifprefix ELSE stmt {
             fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
-            emit(no_op,NULL,NULL,NULL,0,yylineno);
-            $$=make_if_quad(currQuad,NULL,1);
+
           }
       ;
 
