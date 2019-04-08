@@ -4,11 +4,16 @@
 #include "quads.h"
 
 
+////////////////////////////////////////////////////////////////////////////
+quad *if_quad;
+
 quad* quads = (quad*) 0;
 
+struct expr *temp_expr;
+struct SymbolTableEntry *t_sym;
 
 
-void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,unsigned label,unsigned line){
+void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
 
   if(currQuad == total){
     expand();
@@ -114,22 +119,30 @@ char* return_op(int op){
     case 23 : return "uminus";
     case 24 : return "if_geatereq";
     case 25 : return "getretval";
-    default :return "empy quad";
+    default :return "empty quad";
   }
 }
 
 ////////////////////////////////////////////
 void print_quads(FILE* out){
+  fprintf(out,"######################################################################################################################################\n\n");
 	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
   int i=0;
 	for(i;i<currQuad;i++){
-    fprintf(out,"\n");
+    fprintf(out,"_____________________________________________________________________________________________________________________________________\n");
 		struct quad* temp=quads+i;
     if(temp==NULL){
       fprintf(out,"Empty Quads\n");
       break;
     }
-    fprintf(out,"%d\t\t%s\t\t\t",i,return_op(temp->op));
+    int j=strlen(return_op(temp->op));
+    if(j<8){
+      fprintf(out,"# %d\t\t%s\t\t\t",i,return_op(temp->op));
+    }
+    else{
+      fprintf(out,"# %d\t\t%s\t\t",i,return_op(temp->op));
+    }
+
     if(temp->result!=NULL){
       fprintf(out,"%s\t\t\t",temp->result->sym->name);
     }
@@ -206,9 +219,10 @@ void print_quads(FILE* out){
     else{
       fprintf(out,"\t\t");
     }
-    fprintf(out,"%d\t\t",temp->line);
+    fprintf(out,"%d\t\n",temp->line);
+
   }
-  fprintf(out,"\n\n");
+  fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
 
@@ -327,3 +341,81 @@ int make_bool(struct expr *expr){
     }
   }
 }
+////////////////////////////////////////////////////////////////////////
+
+expr* make_if_quad(int label, expr* temp){
+
+  temp_expr=(struct expr*)malloc(sizeof(struct expr));
+  t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+  temp_expr->sym=t_sym;
+  temp_expr->sym->name=temp->sym->name;
+  temp_expr->value.intValue=label-1;
+
+  return temp_expr;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+void if_backpatch(expr* temp){
+  int i=currQuad-2;
+  struct quad* t_q=quads+i;
+  struct quad* base_quad=quads+(currQuad-1);
+
+  //to i mas deixnei ton ari8mo tou quad mesa ston pinaka
+
+  //fix jump labels for true-false
+  while(i>=0){
+    if(t_q->op==assign){
+      if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==0)){
+        (t_q+1)->label=temp->value.intValue;
+      }
+      else if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==1)){
+        (t_q+1)->label=temp->value.intValue;
+        base_quad->label=i+2;
+      }
+    }
+    i--;
+    t_q=quads+i;
+  }
+  i=currQuad-2;
+  t_q=quads+i;
+  base_quad=quads+(currQuad-1);
+
+  //fix if_eq labels
+  while(i>=0){
+    if(t_q->op==if_eq){
+       if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
+         int j=i-1;
+         struct quad* t_j=quads+j;
+         while(j>=0){
+           if(t_j->op==assign){
+             if((t_j->result->sym->name==temp->sym->name) && (t_j->arg1->int_real==-2) && (t_j->arg1->value.boolean==1)){
+               (t_q)->label=j+2;
+             }
+           }
+           j--;
+           t_j=quads+j;
+         }
+       }
+     }
+     i--;
+     t_q=quads+i;
+  }
+
+  //fix jump labels for jump quads after true
+  i=currQuad;
+  t_q=quads+i;
+  base_quad=quads+(currQuad);
+  while(i>=0){
+    if(t_q->op==if_eq){
+       if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
+         (t_q-1)->label=currQuad;
+       }
+    }
+    i--;
+    t_q=quads+i;
+  }
+
+  return;
+}
+/////////////////////////////////////////////////////////////////////////
