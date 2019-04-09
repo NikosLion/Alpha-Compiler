@@ -78,7 +78,6 @@ stmt:	expr SEMICOLON  {fprintf(GOUT,"stmt: expr ;  \n");}
       }
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
-        printf("@@@@@@@@@@@@@@    %s\n",$1->sym->name );
         if_backpatch($1);
 
       }
@@ -430,6 +429,7 @@ booleanop:		expr AND expr {
                 temp->sym=sym;
                 temp->sym->name=temp_name();
                 temp->type=var_e;
+                temp->int_real=-6;
 
                 struct expr *temp_true;
                 temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -455,9 +455,9 @@ booleanop:		expr AND expr {
                 emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
                 emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
                 emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+                emit(jump,NULL,NULL,NULL,0,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
-
+                emit(jump,NULL,NULL,NULL,0,yylineno);
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -470,6 +470,7 @@ booleanop:		expr AND expr {
             temp->sym=sym;
             temp->sym->name=temp_name();
             temp->type=var_e;
+            temp->int_real=-5;
 
             struct expr *temp_true;
             temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -494,9 +495,9 @@ booleanop:		expr AND expr {
             emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
             emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
             emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(assign,temp_false,NULL,temp,0,yylineno);
-
+            emit(jump,NULL,NULL,NULL,0,yylineno);
             $$=temp;
           }
 		 ;
@@ -1263,13 +1264,11 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(if_eq,$3,temp_true,NULL,0,yylineno);
             $$=make_if_quad(currQuad,$3);
-            printf("!!!!!!!!!!!!!!!    %s\n",$$->sym->name );
           }
 	    ;
 
 ifstmt: 	ifprefix ELSE stmt {
             fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
-
           }
       ;
 
