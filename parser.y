@@ -620,7 +620,7 @@ assignexpr:	lvalue ASSIGN expr{
               temp->sym->name=temp_name();
               temp->type=var_e;
               emit(assign,$3,NULL,$1,0,yylineno);
-              emit(assign,$1,NULL,temp,0,yylineno);
+              emit(assign,$3,NULL,temp,0,yylineno);
           }
 		  ;
 
