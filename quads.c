@@ -150,7 +150,7 @@ void print_quads(FILE* out){
       fprintf(out,"\t\t\t");
     }
     if(temp->arg1!=NULL){
-      if(temp->arg1->sym==NULL){
+    //  if(temp->arg1->sym==NULL){
         if(temp->arg1->type==conststring_e){
           fprintf(out,"%s\t\t\t",temp->arg1->value.stringValue);
         }
@@ -172,7 +172,7 @@ void print_quads(FILE* out){
           else if(temp->arg1->int_real==1){
             fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
           }
-        }
+      //  }
       }
       else{
         fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
@@ -182,7 +182,7 @@ void print_quads(FILE* out){
       fprintf(out,"\t\t\t");
     }
     if(temp->arg2!=NULL){
-      if(temp->arg2->sym==NULL){
+      //if(temp->arg2->sym==NULL){
         if(temp->arg2->type==conststring_e){
           fprintf(out,"%s\t\t\t",temp->arg2->value.stringValue);
         }
@@ -204,7 +204,7 @@ void print_quads(FILE* out){
           else if(temp->arg2->int_real==1){
             fprintf(out,"%d\t\t\t",temp->arg2->value.intValue);
           }
-        }
+      //  }
       }
       else{
         fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
@@ -423,7 +423,7 @@ void if_backpatch(expr* temp){
                }
                //periptwsh and
                else if(t_j->result->int_real==-6){
-                 (t_q)->label=j+3;
+                 (t_q)->label=j+4;
                }
                //ta upoloipa
                else{
@@ -453,7 +453,6 @@ void if_backpatch(expr* temp){
     i--;
     t_q=quads+i;
   }
-
   return;
 }
 /////////////////////////////////////////////////////////////////////////

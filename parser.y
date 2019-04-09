@@ -1131,20 +1131,30 @@ funcdef:	FUNCTION IDENTIFIER {
                     fprintf(GOUT,"const: INTEGER\n");
                     struct expr *new_int;
                     new_int=(struct expr*)malloc(sizeof(struct expr));
-
+                    struct SymbolTableEntry *sym;
+                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    new_int->sym=sym;
                     new_int->value.intValue =$1;
                     new_int->type=constnum_e;
                     new_int->int_real=1;
+                    char s[20];
+                    sprintf(s,"%d",$1);
+                    new_int->sym->name=s;
                     $$=new_int;
                   }
       |		REAL		{
                     fprintf(GOUT,"const: REAL\n");
                     struct expr *new_real;
                     new_real=(struct expr*)malloc(sizeof(struct expr));
-
+                    struct SymbolTableEntry *sym;
+                    sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                    new_real->sym=sym;
                     new_real->value.realValue =$1;
                     new_real->type=constnum_e;
                     new_real->int_real=0;
+                    char s[20];
+                    sprintf(s,"%f",$1);
+                    new_real->sym->name=s;
                     $$=new_real;
                   }
       |		STRINGLITERAL	{
@@ -1152,42 +1162,54 @@ funcdef:	FUNCTION IDENTIFIER {
                           struct expr *new_string;
                           char *csgo;
                           new_string=(struct expr*)malloc(sizeof(struct expr));
-
+                          struct SymbolTableEntry *sym;
+                          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                          new_string->sym=sym;
                           csgo= malloc(strlen($1+1));
                           csgo=$1;
                           new_string->value.stringValue=csgo;
                           new_string->type=conststring_e;
                           new_string->int_real=-1;
+                          new_string->sym->name=csgo;
                           $$=new_string;
                         }
       |		NIL				{
                       fprintf(GOUT,"const: NIL\n");
                       struct expr *new_null;
                       new_null=(struct expr*)malloc(sizeof(struct expr));
-
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_null->sym=sym;
                       new_null->value.boolean=0;
                       new_null->type=nil_e;
                       new_null->int_real=-2;
+                      new_null->sym->name="nill";
                       $$=new_null;
                     }
       |		TRUE			{
                       fprintf(GOUT,"const: TRUE\n");
                       struct expr *new_boolean;
                       new_boolean=(struct expr*)malloc(sizeof(struct expr));
-
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_boolean->sym=sym;
                       new_boolean->value.boolean=1;
                       new_boolean->type=constbool_e;
                       new_boolean->int_real=-2;
+                      new_boolean->sym->name="true";
                       $$=new_boolean;
                     }
       |		FALSE			{
                       fprintf(GOUT,"const: FALSE\n");
                       struct expr *new_boolean;
                       new_boolean=(struct expr*)malloc(sizeof(struct expr));
-
+                      struct SymbolTableEntry *sym;
+                      sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                      new_boolean->sym=sym;
                       new_boolean->value.boolean=0;
                       new_boolean->type=constbool_e;
                       new_boolean->int_real=-2;
+                      new_boolean->sym->name="false";
                       $$=new_boolean;
                     }
       ;
