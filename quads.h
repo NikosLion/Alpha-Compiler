@@ -31,7 +31,10 @@ enum expr_t{
   libraryfunc_e,    newtable_e,     nil_e
 };
 
-
+typedef struct tf_node{
+  int label;
+  struct tf_node* next;
+}tf_node;
 
 typedef struct expr{
   enum expr_t type;
@@ -43,6 +46,8 @@ typedef struct expr{
     double realValue;
     int boolean;    //true 1,false 0,null 0
   }value;
+  tf_node* true_list;
+  tf_node* false_list;
   struct expr* index;
   struct expr* next;
 }expr;
@@ -64,6 +69,7 @@ void print_quads(FILE* out);
 int make_bool(struct expr *expr);
 expr* make_if_quad(int label, expr* temp);
 void if_backpatch(expr* temp,int arg);
+void insert_tf_list(expr* dest,int list,int label);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

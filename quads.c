@@ -472,7 +472,7 @@ void if_backpatch(expr* temp,int arg){
      i--;
      t_q=quads+i;
    }
-   
+
   if(arg==0){
     //fix jump labels for jump quads after true
     i=currQuad;
@@ -492,3 +492,51 @@ void if_backpatch(expr* temp,int arg){
   return;
 }
 /////////////////////////////////////////////////////////////////////////
+void insert_tf_list(expr* dest,int list,int label){
+  struct tf_node *temp;
+  struct tf_node *prev;
+  struct tf_node *new_entry;
+  new_entry=(struct tf_node*)malloc(sizeof(struct tf_node));
+
+  if(new_entry==NULL){
+      printf("ERROR: OUT_OF_MEMORY\n");
+      return;
+  }
+
+  new_entry->label=label;
+  new_entry->next=NULL;
+
+  if(list==0){
+    if(dest->false_list==NULL){
+      dest->false_list=new_entry;
+      dest->false_list->next=NULL;
+    }
+    else{
+      temp=dest->false_list;
+      prev=temp;
+      while(temp!=NULL){
+        prev=temp;
+        temp=temp->next;
+      }
+      prev->next=new_entry;
+    }
+  }
+  else if(list==1){
+    if(dest->true_list==NULL){
+      dest->true_list=new_entry;
+      dest->true_list->next=NULL;
+    }
+    else{
+      temp=dest->true_list;
+      prev=temp;
+      while(temp!=NULL){
+        prev=temp;
+        temp=temp->next;
+      }
+      prev->next=new_entry;
+    }
+
+  }
+
+  return;
+}

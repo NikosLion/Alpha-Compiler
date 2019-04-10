@@ -243,30 +243,12 @@ relativeop:		expr GREATER expr  {
 
                 struct expr *temp;
                 temp=(struct expr*)malloc(sizeof(struct expr));
-                struct SymbolTableEntry *sym;
-                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                temp->sym=sym;
-                temp->sym->name=temp_name();
-                temp->type=var_e;
+                temp->type=boolexpr_e;
 
-                struct expr *temp_true;
-                temp_true=(struct expr*)malloc(sizeof(struct expr));
-                temp_true->type=constbool_e;
-                temp_true->value.boolean=1;
-                temp_true->int_real=-2;
-
-                struct expr *temp_false;
-                temp_false=(struct expr*)malloc(sizeof(struct expr));
-                temp_false->type=constbool_e;
-                temp_false->value.boolean=0;
-                temp_false->int_real=-2;
-
-                emit(if_greater,$1,$3,NULL,currQuad+3,yylineno);
-                emit(assign,temp_false,NULL,temp,0,yylineno);
+                emit(if_greater,$1,$3,NULL,0,yylineno);
                 emit(jump,NULL,NULL,NULL,0,yylineno);
-                emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-
+                insert_tf_list(temp,1,currQuad-2);
+                insert_tf_list(temp,0,currQuad-1);
                 $$=temp;
               }
 		  |		expr GR_EQUAL expr {
@@ -274,30 +256,12 @@ relativeop:		expr GREATER expr  {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
+            temp->type=boolexpr_e;
 
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            emit(if_greatereq,$1,$3,NULL,currQuad+3,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(if_greatereq,$1,$3,NULL,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            insert_tf_list(temp,1,currQuad-2);
+            insert_tf_list(temp,0,currQuad-1);
             $$=temp;
           }
 		  |		expr LESS expr {
@@ -305,30 +269,12 @@ relativeop:		expr GREATER expr  {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
+            temp->type=boolexpr_e;
 
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            emit(if_less,$1,$3,NULL,currQuad+3,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(if_less,$1,$3,NULL,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            insert_tf_list(temp,1,currQuad-2);
+            insert_tf_list(temp,0,currQuad-1);
             $$=temp;
           }
 		  |		expr LESS_EQUAL expr {
@@ -336,30 +282,12 @@ relativeop:		expr GREATER expr  {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
+            temp->type=boolexpr_e;
 
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            emit(if_lesseq,$1,$3,NULL,currQuad+3,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(if_lesseq,$1,$3,NULL,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            insert_tf_list(temp,1,currQuad-2);
+            insert_tf_list(temp,0,currQuad-1);
             $$=temp;
           }
 		  |		expr EQUALS expr {
@@ -367,30 +295,12 @@ relativeop:		expr GREATER expr  {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
+            temp->type=boolexpr_e;
 
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            emit(if_eq,$1,$3,NULL,currQuad+3,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(if_eq,$1,$3,NULL,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            insert_tf_list(temp,1,currQuad-2);
+            insert_tf_list(temp,0,currQuad-1);
             $$=temp;
           }
 		  |		expr NOT_EQUALS expr {
@@ -398,30 +308,12 @@ relativeop:		expr GREATER expr  {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
+            temp->type=boolexpr_e;
 
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            emit(if_noteq,$1,$3,NULL,currQuad+3,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
+            emit(if_noteq,$1,$3,NULL,0,yylineno);
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-
+            insert_tf_list(temp,1,currQuad-2);
+            insert_tf_list(temp,0,currQuad-1);
             $$=temp;
           }
 		  ;
