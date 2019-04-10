@@ -150,28 +150,27 @@ void print_quads(FILE* out){
       fprintf(out,"\t\t\t");
     }
     if(temp->arg1!=NULL){
-      if(temp->arg1->sym==NULL){
-        if(temp->arg1->type==conststring_e){
-          fprintf(out,"%s\t\t\t",temp->arg1->value.stringValue);
+
+      if(temp->arg1->type==conststring_e){
+        fprintf(out,"%s\t\t\t",temp->arg1->value.stringValue);
+      }
+      else if(temp->arg1->type==constbool_e){
+        if(temp->arg1->value.boolean==0){
+          fprintf(out,"false\t\t\t");
         }
-        else if(temp->arg1->type==constbool_e){
-          if(temp->arg1->value.boolean==0){
-            fprintf(out,"false\t\t\t");
-          }
-          else if(temp->arg1->value.boolean==1){
-            fprintf(out,"true\t\t\t");
-          }
+        else if(temp->arg1->value.boolean==1){
+          fprintf(out,"true\t\t\t");
         }
-        else if(temp->arg1->type==nil_e){
-          fprintf(out,"null\t\t\t");
+      }
+      else if(temp->arg1->type==nil_e){
+        fprintf(out,"null\t\t\t");
+      }
+      else if(temp->arg1->type==constnum_e){
+        if(temp->arg1->int_real==0){
+          fprintf(out,"%f\t\t\t",temp->arg1->value.realValue);
         }
-        else if(temp->arg1->type==constnum_e){
-          if(temp->arg1->int_real==0){
-            fprintf(out,"%f\t\t\t",temp->arg1->value.realValue);
-          }
-          else if(temp->arg1->int_real==1){
-            fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
-          }
+        else if(temp->arg1->int_real==1){
+          fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
         }
       }
       else{
@@ -182,28 +181,26 @@ void print_quads(FILE* out){
       fprintf(out,"\t\t\t");
     }
     if(temp->arg2!=NULL){
-      if(temp->arg2->sym==NULL){
-        if(temp->arg2->type==conststring_e){
-          fprintf(out,"%s\t\t\t",temp->arg2->value.stringValue);
+      if(temp->arg2->type==conststring_e){
+        fprintf(out,"%s\t\t\t",temp->arg2->value.stringValue);
+      }
+      else if(temp->arg2->type==constbool_e){
+        if(temp->arg2->value.boolean==0){
+          fprintf(out,"false\t\t\t");
         }
-        else if(temp->arg2->type==constbool_e){
-          if(temp->arg2->value.boolean==0){
-            fprintf(out,"false\t\t\t");
-          }
-          else if(temp->arg2->value.boolean==1){
-            fprintf(out,"true\t\t\t");
-          }
+        else if(temp->arg2->value.boolean==1){
+          fprintf(out,"true\t\t\t");
         }
-        else if(temp->arg2->type==nil_e){
-          fprintf(out,"null\t\t\t");
+      }
+      else if(temp->arg2->type==nil_e){
+        fprintf(out,"null\t\t\t");
+      }
+      else if(temp->arg2->type==constnum_e){
+        if(temp->arg2->int_real==0){
+          fprintf(out,"%f\t\t\t",temp->arg2->value.realValue);
         }
-        else if(temp->arg2->type==constnum_e){
-          if(temp->arg2->int_real==0){
-            fprintf(out,"%f\t\t\t",temp->arg2->value.realValue);
-          }
-          else if(temp->arg2->int_real==1){
-            fprintf(out,"%d\t\t\t",temp->arg2->value.intValue);
-          }
+        else if(temp->arg2->int_real==1){
+          fprintf(out,"%d\t\t\t",temp->arg2->value.intValue);
         }
       }
       else{
@@ -348,16 +345,43 @@ expr* make_if_quad(int label, expr* temp){
   temp_expr=(struct expr*)malloc(sizeof(struct expr));
   t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
   temp_expr->sym=t_sym;
-  temp_expr->sym->name=temp->sym->name;
+  if(temp->type==var_e){
+    temp_expr->sym->name=temp->sym->name;
+  }
+  else if(temp->type==constnum_e){
+    if(temp->int_real==1){
+      char s[20];
+      sprintf(s,"%d",temp->value.intValue);
+      temp_expr->sym->name=s;
+    }
+    else if(temp->int_real==0){
+      char s[20];
+      sprintf(s,"%d",temp->value.intValue);
+      temp_expr->sym->name=s;
+    }
+  }
+  else if(temp->type==conststring_e){
+    temp_expr->sym->name=temp->value.stringValue;
+  }
+  else if(temp->type==constbool_e){
+    if(temp->value.boolean==0){
+      temp_expr->sym->name="_false";
+    }
+    else if(temp->value.boolean==1){
+      temp_expr->sym->name="_true";
+    }
+  }
+  else if(temp->type==nil_e){
+    temp_expr->sym->name="_false";
+  }
   temp_expr->value.intValue=label-1;
-
   return temp_expr;
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-void if_backpatch(expr* temp){
-  int i=currQuad-2;
+void if_backpatch(expr* temp,int arg){
+  int i=currQuad-1;
   struct quad* t_q=quads+i;
   struct quad* base_quad=quads+(currQuad-1);
 
@@ -371,17 +395,47 @@ void if_backpatch(expr* temp){
       }
       else if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==1)){
         (t_q+1)->label=temp->value.intValue;
-        base_quad->label=i+2;
-      }
+        ///////////////////////////////////
+          //periptwsh or
+          if(t_q->result->int_real==-5){
+            if(arg==0){
+              base_quad->label=i+4;
+            }
+            else if(arg==1){
+              base_quad->label=i+4;
+              (base_quad-1)->label=i-3;
+            }
+          }
+          //periptwsh and
+          else if(t_q->result->int_real==-6){
+            if(arg==0){
+              base_quad->label=i+4;
+            }
+            else if(arg==1){
+              base_quad->label=i+4;
+              (base_quad-1)->label=i-4;
+            }
+          }
+          //ta upoloipa
+          else{
+            if(arg==2){
+              (base_quad-1)->label=i-3;
+            }
+            base_quad->label=i+2;
+          }
+        }
+        //////////////////////////////////
     }
     i--;
     t_q=quads+i;
   }
-  i=currQuad-2;
+
+
+  i=currQuad;
   t_q=quads+i;
   base_quad=quads+(currQuad-1);
 
-  //fix if_eq labels
+ //fix if_eq labels
   while(i>=0){
     if(t_q->op==if_eq){
        if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
@@ -389,8 +443,25 @@ void if_backpatch(expr* temp){
          struct quad* t_j=quads+j;
          while(j>=0){
            if(t_j->op==assign){
+
              if((t_j->result->sym->name==temp->sym->name) && (t_j->arg1->int_real==-2) && (t_j->arg1->value.boolean==1)){
-               (t_q)->label=j+2;
+               if(arg==0){
+                 //periptwsh or
+                 if(t_j->result->int_real==-5){
+                   (t_q)->label=j+4;
+                 }
+                 //periptwsh and
+                 else if(t_j->result->int_real==-6){
+                   (t_q)->label=j+4;
+                 }
+                 //ta upoloipa
+                 else{
+                   (t_q)->label=j+2;
+                 }
+               }
+               else if(arg==1){
+                 (t_q-1)->label=j-3;
+               }
              }
            }
            j--;
@@ -400,20 +471,22 @@ void if_backpatch(expr* temp){
      }
      i--;
      t_q=quads+i;
-  }
-
-  //fix jump labels for jump quads after true
-  i=currQuad;
-  t_q=quads+i;
-  base_quad=quads+(currQuad);
-  while(i>=0){
-    if(t_q->op==if_eq){
-       if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
-         (t_q-1)->label=currQuad;
-       }
-    }
-    i--;
+   }
+   
+  if(arg==0){
+    //fix jump labels for jump quads after true
+    i=currQuad;
     t_q=quads+i;
+    base_quad=quads+(currQuad);
+    while(i>=0){
+      if(t_q->op==if_eq){
+         if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
+           (t_q-1)->label=currQuad;
+         }
+      }
+      i--;
+      t_q=quads+i;
+    }
   }
 
   return;
