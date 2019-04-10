@@ -430,7 +430,7 @@ void if_backpatch(expr* temp,int arg){
     t_q=quads+i;
   }
 
-/*
+
   i=currQuad;
   t_q=quads+i;
   base_quad=quads+(currQuad-1);
@@ -471,7 +471,8 @@ void if_backpatch(expr* temp,int arg){
      }
      i--;
      t_q=quads+i;
-  }*/
+   }
+   
   if(arg==0){
     //fix jump labels for jump quads after true
     i=currQuad;
