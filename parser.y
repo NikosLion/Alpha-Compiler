@@ -45,11 +45,11 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt whilestmt forstmt elist
 %type<argument_t> idlist
-%type<stringValue>  whilestmt forstmt returnstmt block
+%type<stringValue>   returnstmt block
 %type<stringValue>   objectdef  member
-%type<stringValue> elist normcall methodcall callsuffix indexed indexedelem
+%type<stringValue>  normcall methodcall callsuffix indexed indexedelem
 
 %right		  ASSIGN
 %left     	OR
@@ -74,15 +74,22 @@ program:	program stmt	 {fprintf(GOUT,"program: program stmt\n");}
 stmt:	expr SEMICOLON  {fprintf(GOUT,"stmt: expr ;  \n");}
     | ifprefix  {
         fprintf(GOUT,"stmt: ifprefix\n");
-        if_backpatch($1);
+        if_backpatch($1,0);
       }
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
-        if_backpatch($1);
+        if_backpatch($1,0);
 
       }
-    | whilestmt {fprintf(GOUT,"stmt: whilestmt\n");}
-    | forstmt {fprintf(GOUT,"stmt: forstmt\n");}
+    | whilestmt {
+        fprintf(GOUT,"stmt: whilestmt\n");
+        if_backpatch($1,1);
+
+      }
+    | forstmt {
+        fprintf(GOUT,"stmt: forstmt\n");
+        if_backpatch($1,2);
+      }
     | returnstmt  {fprintf(GOUT,"stmt: returnstmt\n");}
     | BREAK SEMICOLON{
         fprintf(GOUT,"statement: break ;\n");
@@ -458,6 +465,7 @@ booleanop:		expr AND expr {
                 emit(jump,NULL,NULL,NULL,0,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
                 emit(jump,NULL,NULL,NULL,0,yylineno);
+                //temp->sym->name=$1->sym->name;
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -603,24 +611,30 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
 
 assignexpr:	lvalue ASSIGN expr{
               fprintf(GOUT,"assignexpr: lvalue = expr\n");
+
               if($1->type==programfunc_e || $1->type==libraryfunc_e){
                 fprintf(GOUT,"Error at line %d: Cannot assign to Funtion %s \n",yylineno,$1->sym->name);
                 exit(0);
               }
               if($3->type==programfunc_e || $3->type==libraryfunc_e){
                 change_type($1->sym->name);
+                $1->type=$3->type;        //isws na prepei na mpei e3w apo thn if
               }
-              $1->type=$3->type;
-              $$=$1;
+
+
+
               struct expr *temp;
               temp=(struct expr*)malloc(sizeof(struct expr));
               struct SymbolTableEntry *sym;
               sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
               temp->sym=sym;
+
               temp->sym->name=temp_name();
               temp->type=var_e;
+
               emit(assign,$3,NULL,$1,0,yylineno);
               emit(assign,$3,NULL,temp,0,yylineno);
+              $$=$1;
           }
 		  ;
 
@@ -917,10 +931,11 @@ elist:		expr {
             struct expr *new_param;
             new_param=(struct expr*)malloc(sizeof(struct expr));
 
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            new_param->sym=sym;
+
             if($1->type==var_e){
-              struct SymbolTableEntry *sym;
-              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-              new_param->sym=sym;
               new_param->type=var_e;
               new_param->sym->name=$1->sym->name;
             }
@@ -946,6 +961,7 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
+
             emit(param,new_param,NULL,NULL,0,yylineno);
           }
      |		elist COMMA expr{
@@ -1296,12 +1312,33 @@ ifstmt: 	ifprefix ELSE stmt {
 
 whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{
       				fprintf(GOUT,"whilestmt: while ( expr ) stmt\n");
+
+              struct expr *temp_true;
+              temp_true=(struct expr*)malloc(sizeof(struct expr));
+              temp_true->type=constbool_e;
+              temp_true->value.boolean=1;
+              temp_true->int_real=-2;
+
+              emit(jump,NULL,NULL,NULL,0,yylineno);
+              emit(if_eq,$3,temp_true,NULL,0,yylineno);
+
+              $$=make_if_quad(currQuad,$3);
       				inside_loop--;
       			}
     	 ;
 
 forstmt:	FOR L_PARENTHESIS elist SEMICOLON expr SEMICOLON elist R_PARENTHESIS {inside_loop++;} stmt	{
 				fprintf(GOUT,"forstmt: for ( elist; expr; elist ) stmt\n");
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        emit(jump,NULL,NULL,NULL,0,yylineno);
+        emit(if_eq,$5,temp_true,NULL,0,yylineno);
+        $$=make_if_quad(currQuad,$5);
 				inside_loop--;
 			}
        ;

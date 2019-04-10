@@ -380,8 +380,8 @@ expr* make_if_quad(int label, expr* temp){
 
 ////////////////////////////////////////////////////////////////////////
 
-void if_backpatch(expr* temp){
-  int i=currQuad-2;
+void if_backpatch(expr* temp,int arg){
+  int i=currQuad-1;
   struct quad* t_q=quads+i;
   struct quad* base_quad=quads+(currQuad-1);
 
@@ -396,29 +396,46 @@ void if_backpatch(expr* temp){
       else if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==1)){
         (t_q+1)->label=temp->value.intValue;
         ///////////////////////////////////
-        //periptwsh or
-        if(t_q->result->int_real==-5){
-          base_quad->label=i+4;
-        }
-        //periptwsh and
-        else if(t_q->result->int_real==-6){
-          base_quad->label=i+4;
-        }
-        //ta upoloipa
-        else{
-          base_quad->label=i+2;
+          //periptwsh or
+          if(t_q->result->int_real==-5){
+            if(arg==0){
+              base_quad->label=i+4;
+            }
+            else if(arg==1){
+              base_quad->label=i+4;
+              (base_quad-1)->label=i-3;
+            }
+          }
+          //periptwsh and
+          else if(t_q->result->int_real==-6){
+            if(arg==0){
+              base_quad->label=i+4;
+            }
+            else if(arg==1){
+              base_quad->label=i+4;
+              (base_quad-1)->label=i-4;
+            }
+          }
+          //ta upoloipa
+          else{
+            if(arg==2){
+              (base_quad-1)->label=i-3;
+            }
+            base_quad->label=i+2;
+          }
         }
         //////////////////////////////////
-      }
     }
     i--;
     t_q=quads+i;
   }
-  i=currQuad-2;
+
+/*
+  i=currQuad;
   t_q=quads+i;
   base_quad=quads+(currQuad-1);
 
-  //fix if_eq labels
+ //fix if_eq labels
   while(i>=0){
     if(t_q->op==if_eq){
        if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
@@ -426,18 +443,24 @@ void if_backpatch(expr* temp){
          struct quad* t_j=quads+j;
          while(j>=0){
            if(t_j->op==assign){
+
              if((t_j->result->sym->name==temp->sym->name) && (t_j->arg1->int_real==-2) && (t_j->arg1->value.boolean==1)){
-               //periptwsh or
-               if(t_j->result->int_real==-5){
-                 (t_q)->label=j+4;
+               if(arg==0){
+                 //periptwsh or
+                 if(t_j->result->int_real==-5){
+                   (t_q)->label=j+4;
+                 }
+                 //periptwsh and
+                 else if(t_j->result->int_real==-6){
+                   (t_q)->label=j+4;
+                 }
+                 //ta upoloipa
+                 else{
+                   (t_q)->label=j+2;
+                 }
                }
-               //periptwsh and
-               else if(t_j->result->int_real==-6){
-                 (t_q)->label=j+4;
-               }
-               //ta upoloipa
-               else{
-                 (t_q)->label=j+2;
+               else if(arg==1){
+                 (t_q-1)->label=j-3;
                }
              }
            }
@@ -448,21 +471,23 @@ void if_backpatch(expr* temp){
      }
      i--;
      t_q=quads+i;
+  }*/
+  if(arg==0){
+    //fix jump labels for jump quads after true
+    i=currQuad;
+    t_q=quads+i;
+    base_quad=quads+(currQuad);
+    while(i>=0){
+      if(t_q->op==if_eq){
+         if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
+           (t_q-1)->label=currQuad;
+         }
+      }
+      i--;
+      t_q=quads+i;
+    }
   }
 
-  //fix jump labels for jump quads after true
-  i=currQuad;
-  t_q=quads+i;
-  base_quad=quads+(currQuad);
-  while(i>=0){
-    if(t_q->op==if_eq){
-       if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
-         (t_q-1)->label=currQuad;
-       }
-    }
-    i--;
-    t_q=quads+i;
-  }
   return;
 }
 /////////////////////////////////////////////////////////////////////////
