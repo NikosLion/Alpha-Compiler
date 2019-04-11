@@ -1,5 +1,5 @@
 
-#include "symtable.h"
+#include "Symtable.h"
 #include <stdio.h>
 
 #define EXPAND_SIZE 1024

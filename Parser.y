@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "quads.h"
+#include "Quads.h"
 #include "Offset_stack.h"
 #include "Function_stack.h"
 

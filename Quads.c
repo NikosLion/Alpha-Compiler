@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "quads.h"
+#include "Quads.h"
 
 
 ////////////////////////////////////////////////////////////////////////////
