@@ -222,7 +222,6 @@ void print_quads(FILE* out){
   fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
-
 ///////////////////////////////////////////////////////////////
 int make_bool(struct expr *expr){
   if(expr==NULL){
@@ -340,7 +339,7 @@ int make_bool(struct expr *expr){
 }
 ////////////////////////////////////////////////////////////////////////
 
-expr* make_if_quad(int label, expr* temp){
+/*expr* make_if_quad(int label, expr* temp){
 
   temp_expr=(struct expr*)malloc(sizeof(struct expr));
   t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
@@ -376,11 +375,11 @@ expr* make_if_quad(int label, expr* temp){
   }
   temp_expr->value.intValue=label-1;
   return temp_expr;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////
 
-void if_backpatch(expr* temp,int arg){
+/*void if_backpatch(expr* temp,int arg){
   int i=currQuad-1;
   struct quad* t_q=quads+i;
   struct quad* base_quad=quads+(currQuad-1);
@@ -472,7 +471,7 @@ void if_backpatch(expr* temp,int arg){
      i--;
      t_q=quads+i;
    }
-   
+
   if(arg==0){
     //fix jump labels for jump quads after true
     i=currQuad;
@@ -490,5 +489,93 @@ void if_backpatch(expr* temp,int arg){
   }
 
   return;
-}
+}*/
 /////////////////////////////////////////////////////////////////////////
+void insert_tf_list(expr* dest,int list,int label){
+  struct tf_node *temp;
+  struct tf_node *prev;
+  struct tf_node *new_entry;
+  new_entry=(struct tf_node*)malloc(sizeof(struct tf_node));
+
+  if(new_entry==NULL){
+      printf("ERROR: OUT_OF_MEMORY\n");
+      return;
+  }
+
+  new_entry->label=label;
+  new_entry->next=NULL;
+
+  if(list==0){
+    if(dest->false_list==NULL){
+      dest->false_list=new_entry;
+      dest->false_list->next=NULL;
+    }
+    else{
+      temp=dest->false_list;
+      prev=temp;
+      while(temp!=NULL){
+        prev=temp;
+        temp=temp->next;
+      }
+      prev->next=new_entry;
+    }
+  }
+  else if(list==1){
+    if(dest->true_list==NULL){
+      dest->true_list=new_entry;
+      dest->true_list->next=NULL;
+    }
+    else{
+      temp=dest->true_list;
+      prev=temp;
+      while(temp!=NULL){
+        prev=temp;
+        temp=temp->next;
+      }
+      prev->next=new_entry;
+    }
+
+  }
+
+  return;
+}
+
+//////////////////////////////////////////
+void merge_tf_list(expr* left,expr* right,expr* dest,int list){
+  tf_node* temp_left;
+  tf_node* temp_right;
+
+  if(list==1){
+    temp_left=left->true_list;
+    temp_right=right->true_list;
+  }
+  else if(list==0){
+    temp_left=left->false_list;
+    temp_right=right->false_list;
+  }
+
+  while(temp_left!=NULL){
+    insert_tf_list(dest,list,temp_left->label);
+    temp_left=temp_left->next;
+  }
+  while(temp_right!=NULL){
+    insert_tf_list(dest,list,temp_right->label);
+    temp_right=temp_right->next;
+  }
+}
+//////////////////////////////////////////
+void backpatch(expr* patched,int patcher,int list_to_patch){
+  tf_node* temp;
+  struct quad* temp_quad=quads;
+
+  if(list_to_patch==1){
+    temp=patched->true_list;
+  }
+  else if(list_to_patch==0){
+    temp=patched->false_list;
+  }
+  while(temp!=NULL){
+      (temp_quad+(temp->label))->label=patcher;
+    temp=temp->next;
+  }
+}
