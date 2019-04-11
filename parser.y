@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "quads.h"
-#include "Stack.h"
+#include "Offset_stack.h"
 #include "Function_stack.h"
 
 extern int yylineno;
@@ -72,18 +72,21 @@ program:	program stmt	 {fprintf(GOUT,"program: program stmt\n");}
 	     ;
 
 stmt:	expr SEMICOLON  {
-        fprintf(GOUT,"stmt: expr ;  \n");
+        fprintf(GOUT,"stmt: expr ;\n");
 
         struct expr *temp;
         temp=(struct expr*)malloc(sizeof(struct expr));
+
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         temp->sym=sym;
+
         temp->sym->offset=currScopeOffset();
         temp->sym->space=currScopeSpace();
         temp->sym->name=temp_name();
         temp->type=var_e;
         incCurrScopeOffset();
+
         if(scope==0){
           insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
         }
@@ -110,47 +113,42 @@ stmt:	expr SEMICOLON  {
           emit(assign,temp_false,NULL,temp,0,yylineno);
           backpatch($1,currQuad-1,0);
         }
-
       }
     | ifprefix  {
         fprintf(GOUT,"stmt: ifprefix\n");
-        //if_backpatch($1,0);
       }
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
-        //if_backpatch($1,0);
-
       }
     | whilestmt {
         fprintf(GOUT,"stmt: whilestmt\n");
-        //if_backpatch($1,1);
-
       }
     | forstmt {
         fprintf(GOUT,"stmt: forstmt\n");
-        //if_backpatch($1,2);
       }
-    | returnstmt  {fprintf(GOUT,"stmt: returnstmt\n");}
-    | BREAK SEMICOLON{
+    | returnstmt  {
+        fprintf(GOUT,"stmt: returnstmt\n");
+      }
+    | BREAK SEMICOLON {
         fprintf(GOUT,"statement: break ;\n");
-      	if(inside_loop==0){
-      		fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
+        if(inside_loop==0){
+        	fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
                 exit(0);
-      	}
+        }
 	    }
-    | CONTINUE SEMICOLON	 {
+    | CONTINUE SEMICOLON  {
     		fprintf(GOUT,"statement: continue ;\n");
     		if(inside_loop==0){
     			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
                 exit(0);
     		}
     	}
-    | block   {fprintf(GOUT,"stmt: block\n");}
-    | funcdef         	   {fprintf(GOUT,"stmt: funcdef\n");}
-    | SEMICOLON       	   {fprintf(GOUT,"stmt: SEMICOLON\n");}
+    | block {fprintf(GOUT,"stmt: block\n");}
+    | funcdef {fprintf(GOUT,"stmt: funcdef\n");}
+    | SEMICOLON {fprintf(GOUT,"stmt: SEMICOLON\n");}
 	  ;
 
-expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}    //!!!!!!!!!!! isws oxi $$=$1
+expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}
     | arithmeticop  {fprintf(GOUT,"expr: arithmeticop\n"); $$=$1;}
     | booleanop {fprintf(GOUT,"expr: booleanop\n"); $$=$1;}
     | relativeop  {fprintf(GOUT,"expr: relativeop\n"); $$=$1;}
@@ -397,7 +395,6 @@ booleanop:		expr AND expr {
                 emit(jump,NULL,NULL,NULL,0,yylineno);
                 emit(assign,temp_false,NULL,temp,0,yylineno);
                 emit(jump,NULL,NULL,NULL,0,yylineno);
-                //temp->sym->name=$1->sym->name;
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -543,7 +540,7 @@ assignexpr:	lvalue ASSIGN expr{
               }
               if($3->type==programfunc_e || $3->type==libraryfunc_e){
                 change_type($1->sym->name);
-                $1->type=$3->type;        //isws na prepei na mpei e3w apo thn if
+                $1->type=$3->type;                  //isws na prepei na mpei e3w apo thn if
               }
 
               struct expr *temp;
@@ -683,7 +680,8 @@ lvalue:		IDENTIFIER {
     			}
     		}
 	  }
-	  |		LOCAL IDENTIFIER		{
+	  |  LOCAL IDENTIFIER  {
+
 			fprintf(GOUT,"lvalue: local IDENTIFIER\n");
 
 			struct expr *temp_maloc;
@@ -693,8 +691,6 @@ lvalue:		IDENTIFIER {
       sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
       temp_maloc->sym=sym;
-
-
 
 			if(look_lib_func($2)){
 				fprintf(GOUT,"Error at line %d: Local identifier trying to shadow library function: %s\n", yylineno,$2);
@@ -742,7 +738,8 @@ lvalue:		IDENTIFIER {
 				}
 			}
 	  }
-	  |		DOUBLE_COLON IDENTIFIER	{
+
+	  |  DOUBLE_COLON IDENTIFIER {
 			fprintf(GOUT,"lvalue: ::IDENTIFIER\n");
 
 			struct expr *temp_maloc;
@@ -772,13 +769,14 @@ lvalue:		IDENTIFIER {
 				exit(0);
 			}
 	  }
-	  |		member			{fprintf(GOUT,"lvalue: member\n");}
+
+	  |		member  {fprintf(GOUT,"lvalue: member\n");}
       ;
 
-member:		lvalue DOT IDENTIFIER			{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
-      |		lvalue L_BRACKET expr R_BRACKET	{fprintf(GOUT,"member: lvalue[expr]\n");}   //pinakas
-      |		call DOT IDENTIFIER				{fprintf(GOUT,"member: call.IDENTIFIER\n");}
-      |		call L_BRACKET expr R_BRACKET	{fprintf(GOUT,"member: call[expr]\n");}       //pinakas
+member:		lvalue DOT IDENTIFIER	{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
+      |		lvalue L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: lvalue[expr]\n");}   //pinakas
+      |		call DOT IDENTIFIER  {fprintf(GOUT,"member: call.IDENTIFIER\n");}
+      |		call L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: call[expr]\n");}       //pinakas
       ;
 
 call:		lvalue callsuffix {
@@ -787,7 +785,6 @@ call:		lvalue callsuffix {
             fprintf(GOUT,"Error at line %d: Invalid call\n",yylineno);
             exit(0);
           }
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$1,0,yylineno);
 
@@ -802,9 +799,9 @@ call:		lvalue callsuffix {
           emit(getretval,NULL,NULL,new_ret,0,yylineno);
           $$=new_ret;
         }
+
     |		L_PARENTHESIS funcdef R_PARENTHESIS L_PARENTHESIS elist R_PARENTHESIS	{
           fprintf(GOUT,"call: ( funcdef ) ( elist )\n");
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$2,0,yylineno);
 
@@ -819,9 +816,9 @@ call:		lvalue callsuffix {
           emit(getretval,NULL,NULL,new_ret,0,yylineno);
           $$=new_ret;
         }
+
     | 	call L_PARENTHESIS elist R_PARENTHESIS {
           fprintf(GOUT,"call: ( elist )\n");
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$1,0,yylineno);
 
@@ -838,8 +835,8 @@ call:		lvalue callsuffix {
         }
     ;
 
-callsuffix:	normcall {fprintf(GOUT,"callsuffix: normcall\n");}
-    	  |	methodcall	{fprintf(GOUT,"callsuffix: methodcall\n");}
+callsuffix:	normcall  {fprintf(GOUT,"callsuffix: normcall\n");}
+    	  |	methodcall {fprintf(GOUT,"callsuffix: methodcall\n");}
     	  ;
 
 normcall:	L_PARENTHESIS elist R_PARENTHESIS	{fprintf(GOUT,"normcall: ( elist )\n");}
@@ -884,9 +881,9 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
-
             emit(param,new_param,NULL,NULL,0,yylineno);
           }
+
      |		elist COMMA expr{
             fprintf(GOUT,"elist: elist, expr\n");
             call_args_counter++;
@@ -924,15 +921,16 @@ elist:		expr {
             }
             emit(param,new_param,NULL,NULL,0,yylineno);
           }
+
      |    {fprintf(GOUT,"elist: \n");}
      ;
 
-objectdef:	L_BRACKET elist R_BRACKET		  {fprintf(GOUT,"objectdef: [ elist ]\n");}
-    	 |	  L_BRACKET indexed R_BRACKET		{fprintf(GOUT,"objectdef: [ indexed ]\n");}
+objectdef:	L_BRACKET elist R_BRACKET  {fprintf(GOUT,"objectdef: [ elist ]\n");}
+    	 |	  L_BRACKET indexed R_BRACKET {fprintf(GOUT,"objectdef: [ indexed ]\n");}
     	 ;
 
-indexed:	indexedelem					       {fprintf(GOUT,"indexedelem\n");}
-	   | 	indexed COMMA indexedelem 	 {fprintf(GOUT,"indexed: indexed , indexedelem\n");}
+indexed:	indexedelem  {fprintf(GOUT,"indexedelem\n");}
+	   | 	indexed COMMA indexedelem  {fprintf(GOUT,"indexed: indexed , indexedelem\n");}
 	   ;
 
 indexedelem:	L_CURLY expr COLON expr R_CURLY	{
@@ -949,9 +947,10 @@ block:		L_CURLY {
             fprintf(GOUT,"block: { program }\n");
   					scope++;
 				  }
+
 				  program R_CURLY{
-          HideVar(scope);
-          scope--;
+            HideVar(scope);
+            scope--;
           }
      ;
 
@@ -984,7 +983,6 @@ funcdef:	FUNCTION IDENTIFIER {
 
          f_push(new_func->sym->name);
          emit(funcstart,NULL,NULL,new_func,0,yylineno);
-
 		   }
     } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
 
@@ -1025,7 +1023,6 @@ funcdef:	FUNCTION IDENTIFIER {
         new_func->sym=sym;
 
         new_func->sym->name=temp_name_func();
-        //decrs_temp_func_counter();
         new_func->type=programfunc_e;
         new_func->value.intValue=currQuad;
 
@@ -1178,7 +1175,6 @@ idlist:		IDENTIFIER {
         */
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
-
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -1210,6 +1206,7 @@ idlist:		IDENTIFIER {
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
 			}
+
 	  |			{fprintf(GOUT,"idlist: \n");}
       ;
 
@@ -1224,7 +1221,6 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
 
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(if_eq,$3,temp_true,NULL,0,yylineno);
-            //$$=make_if_quad(currQuad,$3);
           }
 	    ;
 
@@ -1245,7 +1241,6 @@ whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{
               emit(jump,NULL,NULL,NULL,0,yylineno);
               emit(if_eq,$3,temp_true,NULL,0,yylineno);
 
-              //$$=make_if_quad(currQuad,$3);
       				inside_loop--;
       			}
     	 ;
@@ -1261,7 +1256,7 @@ forstmt:	FOR L_PARENTHESIS elist SEMICOLON expr SEMICOLON elist R_PARENTHESIS {i
 
         emit(jump,NULL,NULL,NULL,0,yylineno);
         emit(if_eq,$5,temp_true,NULL,0,yylineno);
-        //$$=make_if_quad(currQuad,$5);
+
 				inside_loop--;
 			}
        ;
@@ -1276,6 +1271,7 @@ returnstmt:	RETURN SEMICOLON{
               new_ret=(struct expr*)malloc(sizeof(struct expr));
               emit(Return,NULL,NULL,NULL,0,yylineno);
             }
+
     	  | RETURN expr SEMICOLON	{
             fprintf(GOUT,"returnstmt: return expr ;\n");
             if(inside_function==0){
@@ -1286,6 +1282,9 @@ returnstmt:	RETURN SEMICOLON{
           }
     	  ;
 %%
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 void yyerror(const char *s){
   if(s=="EOF"){
@@ -1305,20 +1304,17 @@ void yyerror(const char *s){
       exit(0);
     }
   }
-
 }
-
-
-
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv){
-  //init_symTable();
 
+  //init_symTable();
   programVarOffset=0;
   functionLocalOffset=0;
   formalArgOffset=0;
   scopeSpaceCounter=1;
-
 
   FILE *ifp, *ofp;
   ifp = fopen(argv[1], "r");
@@ -1351,7 +1347,7 @@ int main(int argc, char **argv){
   fclose(yyin);
 
   if(GOUT!=stdout){
-	fclose(GOUT);
+	   fclose(GOUT);
   }
 
   return 0;

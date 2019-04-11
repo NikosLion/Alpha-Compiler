@@ -50,15 +50,6 @@ void print_symTable(FILE* out){
         fasi2=fasi;
         while(fasi2!=NULL){
             fprintf(out,"Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
-           /*
-           temp_args=fasi2->args;
-            if((fasi2->type==4) && (temp_args!=NULL)){
-              while(temp_args!=NULL){
-                printf("Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",temp_args->name,temp_args->scope,temp_args->line,temp_args->type);
-                temp_args=temp_args->next;
-              }
-            }
-            */
             fasi2=fasi2->scope_next;
         }
         fprintf(out,"\n");
@@ -104,10 +95,9 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
     newEntry=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
     if (newEntry==NULL){
-        printf("ERROR: OUT_OF_MEMORY\n");
+        printf("ERROR: OUT_OF_MEMORY, check symtable\n");
         return;
     }
-
     newEntry->isActive=1;
     newEntry->name=strdup(name);
     newEntry->scope=scope;
@@ -153,10 +143,8 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
             else if(temp->scope > newEntry->scope){
                 newEntry->scope_list_next=temp;
                 prev->scope_list_next=newEntry;
-
             }
         }
-
     }
     return;
 }
@@ -338,58 +326,6 @@ int lookup_funcArgs(int scope,char *name){
       }
     }
     return 0;							//den to vrhke, ara proxwraei h insert
-}
-
-//////////////////////////////////////////////////////////
-/*Diagrafei ta symvola pou eisixthisan ston symbol table
-  kata tin klhsh mias synarthshs.
-*/
-int delete_call_args(int scope,int call_args_counter){
-    SymbolTableEntry *temp=ScopeListHead;
-    SymbolTableEntry *prev=NULL;
-    SymbolTableEntry *temp_next=NULL;
-    int i=0;
-    int j=0;
-    if(scope==0){
-      while(i<call_args_counter){
-        temp->scope_next->scope_list_next=temp->scope_list_next;
-        ScopeListHead=temp->scope_next;
-        temp->scope_next=NULL;
-        temp=ScopeListHead;
-        i++;
-      }
-      return 1;
-    }
-    else{
-      while(j<scope){
-        if(temp!=NULL){
-          prev=temp;
-          temp=temp->scope_list_next;
-          j++;
-        }
-        else{
-          printf("ERROR: at function delete_call_args\n");
-          return 0;
-        }
-      }
-      while(i<call_args_counter){
-        if(temp!=NULL){
-          if(temp->scope_next!=NULL){
-            temp->scope_next->scope_list_next=temp->scope_list_next;
-            temp->scope_list_next=NULL;
-            prev->scope_list_next=temp->scope_next;
-            temp->scope_next=NULL;
-            temp=prev->scope_list_next;
-          }
-          else{
-            prev->scope_list_next=temp->scope_list_next;
-            temp=NULL;
-          }
-        }
-        i++;
-      }
-      return 1;
-    }
 }
 
 ////////////////////////////////////////////////////////////////
