@@ -71,24 +71,64 @@ program:	program stmt	 {fprintf(GOUT,"program: program stmt\n");}
 	     |                 {fprintf(GOUT,"program: \n");}
 	     ;
 
-stmt:	expr SEMICOLON  {fprintf(GOUT,"stmt: expr ;  \n");}
+stmt:	expr SEMICOLON  {
+        fprintf(GOUT,"stmt: expr ;  \n");
+
+        struct expr *temp;
+        temp=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp->sym=sym;
+        temp->sym->offset=currScopeOffset();
+        temp->sym->space=currScopeSpace();
+        temp->sym->name=temp_name();
+        temp->type=var_e;
+        incCurrScopeOffset();
+        if(scope==0){
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        struct expr *temp_false;
+        temp_false=(struct expr*)malloc(sizeof(struct expr));
+        temp_false->type=constbool_e;
+        temp_false->value.boolean=0;
+        temp_false->int_real=-2;
+
+        if($1->type==boolexpr_e){
+          emit(assign,temp_true,NULL,temp,0,yylineno);
+          backpatch($1,currQuad-1,1);
+          emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+          emit(assign,temp_false,NULL,temp,0,yylineno);
+          backpatch($1,currQuad-1,0);
+        }
+
+      }
     | ifprefix  {
         fprintf(GOUT,"stmt: ifprefix\n");
-        if_backpatch($1,0);
+        //if_backpatch($1,0);
       }
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
-        if_backpatch($1,0);
+        //if_backpatch($1,0);
 
       }
     | whilestmt {
         fprintf(GOUT,"stmt: whilestmt\n");
-        if_backpatch($1,1);
+        //if_backpatch($1,1);
 
       }
     | forstmt {
         fprintf(GOUT,"stmt: forstmt\n");
-        if_backpatch($1,2);
+        //if_backpatch($1,2);
       }
     | returnstmt  {fprintf(GOUT,"stmt: returnstmt\n");}
     | BREAK SEMICOLON{
@@ -365,12 +405,8 @@ booleanop:		expr AND expr {
 
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
-            struct SymbolTableEntry *sym;
-            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-            temp->sym=sym;
-            temp->sym->name=temp_name();
-            temp->type=var_e;
-            temp->int_real=-5;
+            temp->type=boolexpr_e;
+            temp->value.boolean=1;
 
             struct expr *temp_true;
             temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -378,26 +414,23 @@ booleanop:		expr AND expr {
             temp_true->value.boolean=1;
             temp_true->int_real=-2;
 
-            struct expr *temp_false;
-            temp_false=(struct expr*)malloc(sizeof(struct expr));
-            temp_false->type=constbool_e;
-            temp_false->value.boolean=0;
-            temp_false->int_real=-2;
-
-            if(scope==0){
-              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            if(($1->type==var_e) || ($1->type!=boolexpr_e)){
+              emit(if_eq,$1,temp_true,NULL,0,yylineno);
+              emit(jump,NULL,NULL,NULL,0,yylineno);
+              insert_tf_list($1,1,currQuad-2);
+              insert_tf_list($1,0,currQuad-1);
             }
-            else{
-              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+            if(($3->type==var_e) || ($3->type!=boolexpr_e)){
+              emit(if_eq,$3,temp_true,NULL,0,yylineno);
+              emit(jump,NULL,NULL,NULL,0,yylineno);
+              insert_tf_list($3,1,currQuad-2);
+              insert_tf_list($3,0,currQuad-1);
             }
+            //backpatch $1->false_list sto label tou quad tou $3
+            backpatch($1,$3->true_list->label,0);
+            merge_tf_list($1,$3,temp,1);
+            temp->false_list=$3->false_list;
 
-            emit(if_eq,$1,temp_true,NULL,currQuad+3,yylineno);
-            emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
-            emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
-            emit(assign,temp_true,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(assign,temp_false,NULL,temp,0,yylineno);
-            emit(jump,NULL,NULL,NULL,0,yylineno);
             $$=temp;
           }
 		 ;
@@ -512,8 +545,6 @@ assignexpr:	lvalue ASSIGN expr{
                 change_type($1->sym->name);
                 $1->type=$3->type;        //isws na prepei na mpei e3w apo thn if
               }
-
-
 
               struct expr *temp;
               temp=(struct expr*)malloc(sizeof(struct expr));
@@ -1193,7 +1224,7 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
 
             emit(jump,NULL,NULL,NULL,0,yylineno);
             emit(if_eq,$3,temp_true,NULL,0,yylineno);
-            $$=make_if_quad(currQuad,$3);
+            //$$=make_if_quad(currQuad,$3);
           }
 	    ;
 
@@ -1214,7 +1245,7 @@ whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{
               emit(jump,NULL,NULL,NULL,0,yylineno);
               emit(if_eq,$3,temp_true,NULL,0,yylineno);
 
-              $$=make_if_quad(currQuad,$3);
+              //$$=make_if_quad(currQuad,$3);
       				inside_loop--;
       			}
     	 ;
@@ -1230,7 +1261,7 @@ forstmt:	FOR L_PARENTHESIS elist SEMICOLON expr SEMICOLON elist R_PARENTHESIS {i
 
         emit(jump,NULL,NULL,NULL,0,yylineno);
         emit(if_eq,$5,temp_true,NULL,0,yylineno);
-        $$=make_if_quad(currQuad,$5);
+        //$$=make_if_quad(currQuad,$5);
 				inside_loop--;
 			}
        ;

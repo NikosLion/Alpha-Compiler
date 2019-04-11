@@ -222,7 +222,6 @@ void print_quads(FILE* out){
   fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
-
 ///////////////////////////////////////////////////////////////
 int make_bool(struct expr *expr){
   if(expr==NULL){
@@ -340,7 +339,7 @@ int make_bool(struct expr *expr){
 }
 ////////////////////////////////////////////////////////////////////////
 
-expr* make_if_quad(int label, expr* temp){
+/*expr* make_if_quad(int label, expr* temp){
 
   temp_expr=(struct expr*)malloc(sizeof(struct expr));
   t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
@@ -376,11 +375,11 @@ expr* make_if_quad(int label, expr* temp){
   }
   temp_expr->value.intValue=label-1;
   return temp_expr;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////
 
-void if_backpatch(expr* temp,int arg){
+/*void if_backpatch(expr* temp,int arg){
   int i=currQuad-1;
   struct quad* t_q=quads+i;
   struct quad* base_quad=quads+(currQuad-1);
@@ -490,7 +489,7 @@ void if_backpatch(expr* temp,int arg){
   }
 
   return;
-}
+}*/
 /////////////////////////////////////////////////////////////////////////
 void insert_tf_list(expr* dest,int list,int label){
   struct tf_node *temp;
@@ -539,4 +538,44 @@ void insert_tf_list(expr* dest,int list,int label){
   }
 
   return;
+}
+
+//////////////////////////////////////////
+void merge_tf_list(expr* left,expr* right,expr* dest,int list){
+  tf_node* temp_left;
+  tf_node* temp_right;
+
+  if(list==1){
+    temp_left=left->true_list;
+    temp_right=right->true_list;
+  }
+  else if(list==0){
+    temp_left=left->false_list;
+    temp_right=right->false_list;
+  }
+
+  while(temp_left!=NULL){
+    insert_tf_list(dest,list,temp_left->label);
+    temp_left=temp_left->next;
+  }
+  while(temp_right!=NULL){
+    insert_tf_list(dest,list,temp_right->label);
+    temp_right=temp_right->next;
+  }
+}
+//////////////////////////////////////////
+void backpatch(expr* patched,int patcher,int list_to_patch){
+  tf_node* temp;
+  struct quad* temp_quad=quads;
+
+  if(list_to_patch==1){
+    temp=patched->true_list;
+  }
+  else if(list_to_patch==0){
+    temp=patched->false_list;
+  }
+  while(temp!=NULL){
+      (temp_quad+(temp->label))->label=patcher;
+    temp=temp->next;
+  }
 }
