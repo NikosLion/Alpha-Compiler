@@ -114,6 +114,7 @@ stmt:	expr SEMICOLON  {
           backpatch($1,currQuad-1,0);
         }
       }
+
     | ifprefix  {
         fprintf(GOUT,"stmt: ifprefix\n");
       }
@@ -155,17 +156,15 @@ expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}
     | term {
         fprintf(GOUT,"expr: term\n");
         if(lvalue_flag==1){
-          $$=$1;
           lvalue_flag=0;
         }
         else if(const_flag==1){
-          $$=$1;
           const_flag=0;
         }
         else if(func_flag==1){
-          $$=$1;
           func_flag=0;
         }
+        $$=$1;
       }
     ;
 
@@ -464,12 +463,27 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         fprintf(GOUT,"term: ! expr\n");
         struct expr *temp_not;
         temp_not=(struct expr*)malloc(sizeof(struct expr));
-        struct SymbolTableEntry *sym;
-        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        temp_not->sym=sym;
-        temp_not->type=var_e;
-        temp_not->sym->name=temp_name();
-        emit(not,$2,NULL,temp_not,0,yylineno);
+        temp_not->type=boolexpr_e;
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        if(($2->type==var_e) || ($2->type!=boolexpr_e)){
+          emit(if_eq,$2,temp_true,NULL,0,yylineno);
+          emit(jump,NULL,NULL,NULL,0,yylineno);
+          insert_tf_list(temp_not,1,currQuad-1);
+          insert_tf_list(temp_not,0,currQuad-2);
+        }
+        else{
+          tf_node* temp_list;
+          temp_list=$2->true_list;
+          $2->true_list=$2->false_list;
+          $2->false_list=temp_list;
+          temp_not=$2;
+        }
         $$=temp_not;
       }
 	|		INCR lvalue{
@@ -1209,8 +1223,7 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             temp_true->type=constbool_e;
             temp_true->value.boolean=1;
             temp_true->int_real=-2;
-
-            emit(jump,NULL,NULL,NULL,0,yylineno);
+            
             emit(if_eq,$3,temp_true,NULL,0,yylineno);
           }
 	    ;
