@@ -361,11 +361,7 @@ booleanop:		expr AND expr {
 
                 struct expr *temp;
                 temp=(struct expr*)malloc(sizeof(struct expr));
-                struct SymbolTableEntry *sym;
-                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                temp->sym=sym;
-                temp->sym->name=temp_name();
-                temp->type=var_e;
+                temp->type=boolexpr_e;
                 temp->int_real=-6;
 
                 struct expr *temp_true;
@@ -380,21 +376,29 @@ booleanop:		expr AND expr {
                 temp_false->value.boolean=0;
                 temp_false->int_real=-2;
 
-                if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                if(($1->type==var_e) || ($1->type!=boolexpr_e)){
+                  emit(if_eq,$1,temp_true,NULL,0,yylineno);
+                  emit(jump,NULL,NULL,NULL,0,yylineno);
+                  insert_tf_list($1,1,currQuad-2);
+                  insert_tf_list($1,0,currQuad-1);
                 }
-                else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                if(($3->type==var_e) || ($3->type!=boolexpr_e)){
+                  emit(if_eq,$3,temp_true,NULL,0,yylineno);
+                  emit(jump,NULL,NULL,NULL,0,yylineno);
+                  insert_tf_list($3,1,currQuad-2);
+                  insert_tf_list($3,0,currQuad-1);
                 }
 
-                emit(if_eq,$1,temp_true,NULL,currQuad+2,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+5,yylineno);
-                emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
-                emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-                emit(assign,temp_false,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
+                if((($1->type==var_e) || ($1->type!=boolexpr_e)) && $3->type==boolexpr_e){
+                  backpatch($3,$1->true_list->label,1);
+                  temp->true_list=$1->true_list;
+                  merge_tf_list($1,$3,temp,0);
+                }
+                else{
+                  backpatch($1,$3->true_list->label,1);
+                  temp->true_list=$3->true_list;
+                  merge_tf_list($1,$3,temp,0);
+                }
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -423,11 +427,18 @@ booleanop:		expr AND expr {
               insert_tf_list($3,1,currQuad-2);
               insert_tf_list($3,0,currQuad-1);
             }
-            //backpatch $1->false_list sto label tou quad tou $3
-            backpatch($1,$3->true_list->label,0);
-            merge_tf_list($1,$3,temp,1);
-            temp->false_list=$3->false_list;
 
+            if((($1->type==var_e) || ($1->type!=boolexpr_e)) && $3->type==boolexpr_e){
+              backpatch($3,$1->true_list->label,0);
+              merge_tf_list($1,$3,temp,1);
+              temp->false_list=$1->false_list;
+            }
+            else{
+              //backpatch $1->false_list sto label tou quad tou $3
+              backpatch($1,$3->true_list->label,0);
+              merge_tf_list($1,$3,temp,1);
+              temp->false_list=$3->false_list;
+            }
             $$=temp;
           }
 		 ;
@@ -1163,16 +1174,6 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-        /*
-          struct expr *new_arg;
-          new_arg=(struct expr*)malloc(sizeof(struct expr));
-          struct SymbolTableEntry *sym;
-          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-          new_arg->sym=sym;
-          new_arg->sym->name=$1;
-          new_arg->type=var_e;
-          emit(param,NULL,NULL,new_arg,0,yylineno);
-        */
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
@@ -1192,16 +1193,6 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-          /*
-          struct expr *new_arg;
-          new_arg=(struct expr*)malloc(sizeof(struct expr));
-          struct SymbolTableEntry *sym;
-          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-          new_arg->sym=sym;
-          new_arg->sym->name=$3;
-          new_arg->type=var_e;
-          emit(param,NULL,NULL,new_arg,0,yylineno);
-          */
           incCurrScopeOffset();
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}

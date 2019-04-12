@@ -465,7 +465,7 @@ void backpatch(expr* patched,int patcher,int list_to_patch){
     temp=patched->false_list;
   }
   while(temp!=NULL){
-      (temp_quad+(temp->label))->label=patcher;
+    (temp_quad+(temp->label))->label=patcher;
     temp=temp->next;
   }
 }
