@@ -173,6 +173,9 @@ void print_quads(FILE* out){
           fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
         }
       }
+      else if(temp->arg1->type==boolexpr_e){
+        fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
+      }
       else{
         fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
       }
@@ -202,6 +205,9 @@ void print_quads(FILE* out){
         else if(temp->arg2->int_real==1){
           fprintf(out,"%d\t\t\t",temp->arg2->value.intValue);
         }
+      }
+      else if(temp->arg2->type==boolexpr_e){
+        //fprintf(out,"%d\t\t\t",temp->);
       }
       else{
         fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
@@ -339,7 +345,7 @@ int make_bool(struct expr *expr){
 }
 ////////////////////////////////////////////////////////////////////////
 
-/*expr* make_if_quad(int label, expr* temp){
+expr* make_if_quad(int label, expr* temp){
 
   temp_expr=(struct expr*)malloc(sizeof(struct expr));
   t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
@@ -375,7 +381,7 @@ int make_bool(struct expr *expr){
   }
   temp_expr->value.intValue=label-1;
   return temp_expr;
-}*/
+}
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -425,7 +431,6 @@ void insert_tf_list(expr* dest,int list,int label){
     }
 
   }
-
   return;
 }
 
@@ -458,11 +463,11 @@ void backpatch(expr* patched,int patcher,int list_to_patch){
   tf_node* temp;
   struct quad* temp_quad=quads;
 
-  if(list_to_patch==1){
-    temp=patched->true_list;
-  }
-  else if(list_to_patch==0){
+  if(list_to_patch==0){
     temp=patched->false_list;
+  }
+  else if(list_to_patch==1){
+    temp=patched->true_list;
   }
   while(temp!=NULL){
     (temp_quad+(temp->label))->label=patcher;
