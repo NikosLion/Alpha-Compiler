@@ -32,9 +32,9 @@ typedef struct FuncArg{
     struct FuncArg *next;
 }FuncArg;
 
+////////////////////////////////////////////////////////////
 
 int lookup_funcArgs(int scope,char *name);
-int delete_call_args(int scope,int call_args_counter);
 int change_name(char *name,char *new_name,int scope);
 int change_type(char *name);
 char *concat(const char *s1, const char *s2);

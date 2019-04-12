@@ -1,5 +1,5 @@
 
-#include "symtable.h"
+#include "Symtable.h"
 #include <stdio.h>
 
 #define EXPAND_SIZE 1024
@@ -67,8 +67,7 @@ void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned 
 void expand(void);
 void print_quads(FILE* out);
 int make_bool(struct expr *expr);
-/*expr* make_if_quad(int label, expr* temp);
-void if_backpatch(expr* temp,int arg);*/
+//expr* make_if_quad(int label, expr* temp);
 void insert_tf_list(expr* dest,int list,int label);
 void merge_tf_list(expr* left,expr* right,expr* dest,int list);
 void backpatch(expr* patched,int patcher,int list_to_patch);
