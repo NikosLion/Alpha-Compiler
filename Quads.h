@@ -83,7 +83,8 @@ void backpatch(expr* patched,int patcher,int list_to_patch);
 void insert_jump_list(int label);
 void backpatch_jat(int label);
 void backpatch_rat(int cur,int label);
-void backpatch_jaf(int cur);
+void backpatch_jaf(int cur,int lab);
+void backpatch_else(int cur,int label);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

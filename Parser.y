@@ -19,6 +19,7 @@ int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
 int else_flag=0;
+int lab=0;
 
 
 
@@ -166,13 +167,8 @@ stmt:	expr SEMICOLON  {
         emit(if_eq,temp,temp_true,NULL,0,yylineno);
         backpatch_rat(currQuad,$1->true_list->label);
         backpatch_jat(currQuad+1);
+        lab=$1->true_list->label;
         $$=$1;
-          struct tf_node *t=$1->true_list;
-        while(t!=NULL){
-
-            printf("!!!!!!!!!!!!!!!!!!!!!!!!  %d  %d   \n",currQuad,t->label);
-            t=t->next;
-        }
 
 
       }
@@ -220,17 +216,12 @@ stmt:	expr SEMICOLON  {
         backpatch_jat(currQuad+1);
 
         emit(jump,NULL,NULL,NULL,0,yylineno);
+        backpatch_jaf(currQuad-1,lab);
 
-        //backpatch_jaf(currQuad-1);
+        backpatch_else(currQuad-1,($1->value.intValue)+1);
 
 
-        struct tf_node *t=$1->true_list;
-        while(t!=NULL){
-
-            printf("@@@@@@@@@@@@@@@@ %d  %d   \n",currQuad-1,t->label);
-            t=t->next;
-        }
-
+        lab=$1->true_list->label;
 
         $$=$1;
       }
@@ -1338,6 +1329,7 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             temp_true->int_real=-2;
             emit(jump,NULL,NULL,NULL,0,yylineno);
             insert_jump_list(currQuad-1);
+            $3->value.intValue=jump_head->label;
             $$=$3;
           }
 	    ;

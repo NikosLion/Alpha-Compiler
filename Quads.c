@@ -513,15 +513,24 @@ void backpatch_jat(int label){
     ptr=ptr->next;
   }
 }
-///////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
 
 void backpatch_rat(int cur,int label){
     (quads+cur-1)->label=label+2;
 }
+
 //////////////////////////////////////////////////////
 
-void backpatch_jaf(int cur){
-  //printf("!@@@@@@@@@@@@@@@@@@@@@@@@ %d  %d \n",cur,(jump_head->label)-1);
-  (quads+cur)->label=80;
+void backpatch_jaf(int cur,int lab){
+  (quads+cur)->label=lab;
 }
+
 ///////////////////////////////////////////////////////
+void backpatch_else(int cur,int label){
+
+  (quads+cur)->label=label;
+
+}
+
+/////////////////////////////////////////////////////
