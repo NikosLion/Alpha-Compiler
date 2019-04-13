@@ -166,7 +166,7 @@ stmt:	expr SEMICOLON  {
         backpatch($1,currQuad-1,0);
         emit(if_eq,temp,temp_true,NULL,0,yylineno);
         backpatch_rat(currQuad,$1->true_list->label);
-        backpatch_jat(currQuad+1);
+        backpatch_jat(currQuad);
         lab=$1->true_list->label;
         $$=$1;
 
