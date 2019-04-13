@@ -9,6 +9,8 @@
 unsigned total;
 int currQuad;
 
+struct jump_after_true *jump_head;
+
 unsigned programVarOffset;
 unsigned functionLocalOffset;
 unsigned formalArgOffset;
@@ -35,6 +37,13 @@ typedef struct tf_node{
   int label;
   struct tf_node* next;
 }tf_node;
+
+
+typedef struct jump_after_true{
+  int label;
+  struct jump_after_true* next;
+}jump_after_true;
+
 
 typedef struct expr{
   enum expr_t type;
@@ -71,6 +80,10 @@ expr* make_if_quad(int label, expr* temp);
 void insert_tf_list(expr* dest,int list,int label);
 void merge_tf_list(expr* left,expr* right,expr* dest,int list);
 void backpatch(expr* patched,int patcher,int list_to_patch);
+void insert_jump_list(int label);
+void backpatch_jat(int label);
+void backpatch_rat(int cur,int label);
+void backpatch_jaf(int cur);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

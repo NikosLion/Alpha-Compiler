@@ -12,7 +12,7 @@ quad* quads = (quad*) 0;
 struct expr *temp_expr;
 struct SymbolTableEntry *t_sym;
 
-
+//////////////////////////////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
 
   if(currQuad == total){
@@ -474,3 +474,54 @@ void backpatch(expr* patched,int patcher,int list_to_patch){
     temp=temp->next;
   }
 }
+////////////////////////////////////////////////////////
+void insert_jump_list(int label){
+
+  struct jump_after_true *new_entry;
+  new_entry=(struct jump_after_true*)malloc(sizeof(struct jump_after_true));
+
+  if(new_entry==NULL){
+    printf("ERROR: OUT_OF_MEMORY\n");
+    return;
+  }
+
+  new_entry->label=label;
+
+  if(jump_head==NULL){
+    jump_head=new_entry;
+  }
+  else{
+    new_entry->next=jump_head;
+    jump_head=new_entry;
+  }
+}
+////////////////////////////////////////////////////////////
+
+void backpatch_jat(int label){
+  struct jump_after_true *ptr;
+  ptr=jump_head;
+
+  if(ptr==NULL){return;}
+  while (ptr!=NULL) {
+    int i=0;
+    for(i;i<currQuad;i++){
+      if(i==ptr->label){
+        (quads+i)->label=label;
+        break;
+      }
+    }
+    ptr=ptr->next;
+  }
+}
+///////////////////////////////////////////////////////////
+
+void backpatch_rat(int cur,int label){
+    (quads+cur-1)->label=label+2;
+}
+//////////////////////////////////////////////////////
+
+void backpatch_jaf(int cur){
+  //printf("!@@@@@@@@@@@@@@@@@@@@@@@@ %d  %d \n",cur,(jump_head->label)-1);
+  (quads+cur)->label=80;
+}
+///////////////////////////////////////////////////////
