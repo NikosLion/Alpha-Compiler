@@ -120,9 +120,12 @@ stmt:	expr SEMICOLON  {
 
         if($1->type==boolexpr_e){
           emit(assign,temp_true,NULL,temp,0,yylineno);
+
           backpatch($1,currQuad-1,1);
+
           emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
           emit(assign,temp_false,NULL,temp,0,yylineno);
+
           backpatch($1,currQuad-1,0);
         }
       }
@@ -158,20 +161,26 @@ stmt:	expr SEMICOLON  {
         else{
           insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
         }
+
         emit(jump,NULL,NULL,NULL,0,yylineno);
         emit(assign,temp_true,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,1);
+
         emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
         emit(assign,temp_false,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,0);
+
         emit(if_eq,temp,temp_true,NULL,0,yylineno);
+
         backpatch_rat(currQuad,$1->true_list->label);
         backpatch_jat(currQuad);
+
         lab=$1->true_list->label;
         $$=$1;
-
-
       }
+
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
 
@@ -204,25 +213,27 @@ stmt:	expr SEMICOLON  {
         else{
           insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
         }
+
         emit(jump,NULL,NULL,NULL,0,yylineno);
         emit(assign,temp_true,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,1);
+
         emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
         emit(assign,temp_false,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,0);
+
         emit(if_eq,temp,temp_true,NULL,0,yylineno);
 
         backpatch_rat(currQuad,$1->true_list->label);
         backpatch_jat(currQuad+1);
 
         emit(jump,NULL,NULL,NULL,0,yylineno);
+
         backpatch_jaf(currQuad-1,lab);
-
         backpatch_else(currQuad-1,($1->value.intValue)+1);
-
-
         lab=$1->true_list->label;
-
         $$=$1;
       }
 
@@ -266,7 +277,6 @@ stmt:	expr SEMICOLON  {
         emit(assign,temp_false,NULL,temp,0,yylineno);
         backpatch($1,currQuad-1,0);
         emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
-
         $$=$1;
       }
 
@@ -310,9 +320,7 @@ stmt:	expr SEMICOLON  {
         emit(assign,temp_false,NULL,temp,0,yylineno);
         backpatch($1,currQuad-1,0);
         emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
-
         $$=$1;
-
       }
     | returnstmt  {
         fprintf(GOUT,"stmt: returnstmt\n");
