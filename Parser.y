@@ -225,9 +225,51 @@ stmt:	expr SEMICOLON  {
 
         $$=$1;
       }
+
     | whilestmt {
         fprintf(GOUT,"stmt: whilestmt\n");
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        struct expr *temp_false;
+        temp_false=(struct expr*)malloc(sizeof(struct expr));
+        temp_false->type=constbool_e;
+        temp_false->value.boolean=0;
+        temp_false->int_real=-2;
+
+        struct expr *temp;
+        temp=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp->sym=sym;
+        temp->sym->offset=currScopeOffset();
+        temp->sym->space=currScopeSpace();
+        temp->sym->name=temp_name();
+        temp->type=var_e;
+        incCurrScopeOffset();
+
+        if(scope==0){
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
+        emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
+        emit(assign,temp_true,NULL,temp,0,yylineno);
+        backpatch($1,currQuad-1,1);
+        emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+        emit(assign,temp_false,NULL,temp,0,yylineno);
+        backpatch($1,currQuad-1,0);
+        emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
+
+        $$=$1;
       }
+
     | forstmt {
         fprintf(GOUT,"stmt: forstmt\n");
       }
@@ -1350,9 +1392,7 @@ whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{
               temp_true->value.boolean=1;
               temp_true->int_real=-2;
 
-              emit(jump,NULL,NULL,NULL,0,yylineno);
-              emit(if_eq,$3,temp_true,NULL,0,yylineno);
-
+              $$=$3;
       				inside_loop--;
       			}
     	 ;
