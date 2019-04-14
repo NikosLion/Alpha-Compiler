@@ -1,5 +1,5 @@
 
-#include "symtable.h"
+#include "Symtable.h"
 #include <stdio.h>
 
 #define EXPAND_SIZE 1024
@@ -8,6 +8,9 @@
 
 unsigned total;
 int currQuad;
+
+struct jump_after_true *jump_head;
+struct tf_node *break_head;
 
 unsigned programVarOffset;
 unsigned functionLocalOffset;
@@ -21,7 +24,7 @@ enum iopcode{
   mul,          if_eq,        call,         tablegetelem,
   Div,          if_noteq,     param,        tablesetelem,
   mod,          if_lesseq,    Return,       uminus,
-  if_greatereq, getretval,    no_op
+  if_greatereq, getretval
 };
 
 enum expr_t{
@@ -35,6 +38,13 @@ typedef struct tf_node{
   int label;
   struct tf_node* next;
 }tf_node;
+
+
+typedef struct jump_after_true{
+  int label;
+  struct jump_after_true* next;
+}jump_after_true;
+
 
 typedef struct expr{
   enum expr_t type;
@@ -67,11 +77,17 @@ void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned 
 void expand(void);
 void print_quads(FILE* out);
 int make_bool(struct expr *expr);
-/*expr* make_if_quad(int label, expr* temp);
-void if_backpatch(expr* temp,int arg);*/
+expr* make_if_quad(int label, expr* temp);
 void insert_tf_list(expr* dest,int list,int label);
 void merge_tf_list(expr* left,expr* right,expr* dest,int list);
 void backpatch(expr* patched,int patcher,int list_to_patch);
+void insert_jump_list(int label);
+void backpatch_jat(int label);
+void backpatch_rat(int cur,int label);
+void backpatch_jaf(int cur,int lab);
+void backpatch_else(int cur,int label);
+void insert_break_list(int label);
+void backpatch_break(int label);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

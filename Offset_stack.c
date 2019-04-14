@@ -1,9 +1,11 @@
-#include "Stack.h"
+#include "Offset_stack.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 
 struct scopeSpace_stack* stack_head=NULL;
+
+/////////////////////////////////////////////////////////////
 
 unsigned pop(){
   struct scopeSpace_stack*  temp;
@@ -12,7 +14,7 @@ unsigned pop(){
   unsigned ret;
 
   if(stack_head==NULL){
-    printf("Stack Empty !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printf("!!!!!!!!!! Empty Stack !!!!!!!!!!\n");
     return -1;
   }
   else{
@@ -23,6 +25,7 @@ unsigned pop(){
     return ret;
   }
 }
+
 ///////////////////////////////////////////////////////////
 void push(unsigned offset){
   struct scopeSpace_stack*  temp;
@@ -38,6 +41,7 @@ void push(unsigned offset){
     stack_head=temp;
   }
 }
+
 /////////////////////////////////////////////////////////////
 void print_stack(){
   struct scopeSpace_stack*  temp;
@@ -45,7 +49,7 @@ void print_stack(){
   assert(temp!=NULL);
   temp=stack_head;
   while(temp!=NULL){
-    printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   %d \n",temp->offset);
+    printf("From Offset Stack:  %d\n",temp->offset);
     temp=temp->next;
   }
 }

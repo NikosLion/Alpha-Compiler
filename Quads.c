@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "quads.h"
+#include "Quads.h"
 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 quad *if_quad;
 
 quad* quads = (quad*) 0;
@@ -12,7 +12,7 @@ quad* quads = (quad*) 0;
 struct expr *temp_expr;
 struct SymbolTableEntry *t_sym;
 
-
+///////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
 
   if(currQuad == total){
@@ -28,7 +28,7 @@ void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned 
   currQuad++;
 }
 
-///////////////////////////////////////
+///////////////////////////////////////////////////////
 void expand(){
   assert(total == currQuad);
   quad* p=(quad*)malloc(NEW_SIZE);
@@ -40,7 +40,7 @@ void expand(){
   total=total+EXPAND_SIZE;
 }
 
-///////////////////////////////////////
+///////////////////////////////////////////////////////
 enum scopespace_t currScopeSpace(void){
   if(scopeSpaceCounter == 1){
     return programvar;
@@ -53,7 +53,7 @@ enum scopespace_t currScopeSpace(void){
   }
 }
 
-/////////////////////////////////////
+///////////////////////////////////////////////////////
 unsigned currScopeOffset(void){
   switch (currScopeSpace()){
     case programvar : return programVarOffset;
@@ -62,7 +62,7 @@ unsigned currScopeOffset(void){
     default: assert(0);
   }
 }
-//////////////////////////////////////
+///////////////////////////////////////////////////////
 void incCurrScopeOffset(void){
   switch (currScopeSpace()){
     case programvar : ++programVarOffset; break;
@@ -71,18 +71,18 @@ void incCurrScopeOffset(void){
   }
 }
 
-//////////////////////////////////////
+///////////////////////////////////////////////////////
 void enterScopeSpace(void){
   ++scopeSpaceCounter;
 }
 
-////////////////////////////////////
+///////////////////////////////////////////////////////
 void exitScopeSpace(void){
   assert(scopeSpaceCounter>1);
   --scopeSpaceCounter;
 }
 
-/////////////////////////////////////
+///////////////////////////////////////////////////////
 void restoreCurScopeOffset(unsigned old_offset){
   switch (currScopeSpace()){
     case programvar : programVarOffset=old_offset; break;
@@ -90,7 +90,8 @@ void restoreCurScopeOffset(unsigned old_offset){
     case formalarg : formalArgOffset=old_offset; break;
   }
 }
-/////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
 char* return_op(int op){
   switch (op) {
     case 0 : return "assign";
@@ -123,7 +124,7 @@ char* return_op(int op){
   }
 }
 
-////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void print_quads(FILE* out){
   fprintf(out,"######################################################################################################################################\n\n");
 	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
@@ -173,6 +174,9 @@ void print_quads(FILE* out){
           fprintf(out,"%d\t\t\t",temp->arg1->value.intValue);
         }
       }
+      else if(temp->arg1->type==boolexpr_e){
+        fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
+      }
       else{
         fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
       }
@@ -203,6 +207,9 @@ void print_quads(FILE* out){
           fprintf(out,"%d\t\t\t",temp->arg2->value.intValue);
         }
       }
+      else if(temp->arg2->type==boolexpr_e){
+        //fprintf(out,"%d\t\t\t",temp->);
+      }
       else{
         fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
       }
@@ -222,7 +229,7 @@ void print_quads(FILE* out){
   fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
-///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 int make_bool(struct expr *expr){
   if(expr==NULL){
     return 0;
@@ -337,160 +344,8 @@ int make_bool(struct expr *expr){
     }
   }
 }
-////////////////////////////////////////////////////////////////////////
 
-/*expr* make_if_quad(int label, expr* temp){
-
-  temp_expr=(struct expr*)malloc(sizeof(struct expr));
-  t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-  temp_expr->sym=t_sym;
-  if(temp->type==var_e){
-    temp_expr->sym->name=temp->sym->name;
-  }
-  else if(temp->type==constnum_e){
-    if(temp->int_real==1){
-      char s[20];
-      sprintf(s,"%d",temp->value.intValue);
-      temp_expr->sym->name=s;
-    }
-    else if(temp->int_real==0){
-      char s[20];
-      sprintf(s,"%d",temp->value.intValue);
-      temp_expr->sym->name=s;
-    }
-  }
-  else if(temp->type==conststring_e){
-    temp_expr->sym->name=temp->value.stringValue;
-  }
-  else if(temp->type==constbool_e){
-    if(temp->value.boolean==0){
-      temp_expr->sym->name="_false";
-    }
-    else if(temp->value.boolean==1){
-      temp_expr->sym->name="_true";
-    }
-  }
-  else if(temp->type==nil_e){
-    temp_expr->sym->name="_false";
-  }
-  temp_expr->value.intValue=label-1;
-  return temp_expr;
-}*/
-
-////////////////////////////////////////////////////////////////////////
-
-/*void if_backpatch(expr* temp,int arg){
-  int i=currQuad-1;
-  struct quad* t_q=quads+i;
-  struct quad* base_quad=quads+(currQuad-1);
-
-  //to i mas deixnei ton ari8mo tou quad mesa ston pinaka
-
-  //fix jump labels for true-false
-  while(i>=0){
-    if(t_q->op==assign){
-      if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==0)){
-        (t_q+1)->label=temp->value.intValue;
-      }
-      else if((t_q->result->sym->name==temp->sym->name) && (t_q->arg1->int_real==-2) && (t_q->arg1->value.boolean==1)){
-        (t_q+1)->label=temp->value.intValue;
-        ///////////////////////////////////
-          //periptwsh or
-          if(t_q->result->int_real==-5){
-            if(arg==0){
-              base_quad->label=i+4;
-            }
-            else if(arg==1){
-              base_quad->label=i+4;
-              (base_quad-1)->label=i-3;
-            }
-          }
-          //periptwsh and
-          else if(t_q->result->int_real==-6){
-            if(arg==0){
-              base_quad->label=i+4;
-            }
-            else if(arg==1){
-              base_quad->label=i+4;
-              (base_quad-1)->label=i-4;
-            }
-          }
-          //ta upoloipa
-          else{
-            if(arg==2){
-              (base_quad-1)->label=i-3;
-            }
-            base_quad->label=i+2;
-          }
-        }
-        //////////////////////////////////
-    }
-    i--;
-    t_q=quads+i;
-  }
-
-
-  i=currQuad;
-  t_q=quads+i;
-  base_quad=quads+(currQuad-1);
-
- //fix if_eq labels
-  while(i>=0){
-    if(t_q->op==if_eq){
-       if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
-         int j=i-1;
-         struct quad* t_j=quads+j;
-         while(j>=0){
-           if(t_j->op==assign){
-
-             if((t_j->result->sym->name==temp->sym->name) && (t_j->arg1->int_real==-2) && (t_j->arg1->value.boolean==1)){
-               if(arg==0){
-                 //periptwsh or
-                 if(t_j->result->int_real==-5){
-                   (t_q)->label=j+4;
-                 }
-                 //periptwsh and
-                 else if(t_j->result->int_real==-6){
-                   (t_q)->label=j+4;
-                 }
-                 //ta upoloipa
-                 else{
-                   (t_q)->label=j+2;
-                 }
-               }
-               else if(arg==1){
-                 (t_q-1)->label=j-3;
-               }
-             }
-           }
-           j--;
-           t_j=quads+j;
-         }
-       }
-     }
-     i--;
-     t_q=quads+i;
-   }
-
-  if(arg==0){
-    //fix jump labels for jump quads after true
-    i=currQuad;
-    t_q=quads+i;
-    base_quad=quads+(currQuad);
-    while(i>=0){
-      if(t_q->op==if_eq){
-         if((t_q->arg1->sym->name==temp->sym->name) && (t_q->arg2->int_real==-2) && (t_q->arg2->value.boolean==1)){
-           (t_q-1)->label=currQuad;
-         }
-      }
-      i--;
-      t_q=quads+i;
-    }
-  }
-
-  return;
-}*/
-/////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void insert_tf_list(expr* dest,int list,int label){
   struct tf_node *temp;
   struct tf_node *prev;
@@ -536,11 +391,10 @@ void insert_tf_list(expr* dest,int list,int label){
     }
 
   }
-
   return;
 }
 
-//////////////////////////////////////////
+///////////////////////////////////////////////////////
 void merge_tf_list(expr* left,expr* right,expr* dest,int list){
   tf_node* temp_left;
   tf_node* temp_right;
@@ -563,19 +417,119 @@ void merge_tf_list(expr* left,expr* right,expr* dest,int list){
     temp_right=temp_right->next;
   }
 }
-//////////////////////////////////////////
+
+///////////////////////////////////////////////////////
 void backpatch(expr* patched,int patcher,int list_to_patch){
   tf_node* temp;
   struct quad* temp_quad=quads;
 
-  if(list_to_patch==1){
-    temp=patched->true_list;
-  }
-  else if(list_to_patch==0){
+  if(list_to_patch==0){
     temp=patched->false_list;
   }
+  else if(list_to_patch==1){
+    temp=patched->true_list;
+  }
   while(temp!=NULL){
-      (temp_quad+(temp->label))->label=patcher;
+    (temp_quad+(temp->label))->label=patcher;
     temp=temp->next;
   }
+}
+
+///////////////////////////////////////////////////////
+void insert_jump_list(int label){
+
+  struct jump_after_true *new_entry;
+  new_entry=(struct jump_after_true*)malloc(sizeof(struct jump_after_true));
+
+  if(new_entry==NULL){
+    printf("ERROR: OUT_OF_MEMORY\n");
+    return;
+  }
+
+  new_entry->label=label;
+
+  if(jump_head==NULL){
+    jump_head=new_entry;
+  }
+  else{
+    new_entry->next=jump_head;
+    jump_head=new_entry;
+  }
+}
+
+///////////////////////////////////////////////////////
+void backpatch_jat(int label){
+  struct jump_after_true *ptr;
+  ptr=jump_head;
+
+  if(ptr==NULL){return;}
+  while (ptr!=NULL) {
+    int i=0;
+    for(i;i<currQuad;i++){
+
+      if(i==ptr->label){
+
+        (quads+i)->label=label;
+        break;
+      }
+    }
+    ptr=ptr->next;
+  }
+}
+
+///////////////////////////////////////////////////////
+void backpatch_rat(int cur,int label){
+    (quads+cur-1)->label=label+2;
+}
+
+///////////////////////////////////////////////////////
+void backpatch_jaf(int cur,int lab){
+  (quads+cur)->label=lab;
+}
+
+///////////////////////////////////////////////////////
+void backpatch_else(int cur,int label){
+  (quads+cur)->label=label;
+}
+
+///////////////////////////////////////////////////////
+void insert_break_list(int label){
+
+  struct tf_node *new_entry;
+  new_entry=(struct tf_node*)malloc(sizeof(struct tf_node));
+
+  if(new_entry==NULL){
+    printf("ERROR: OUT_OF_MEMORY\n");
+    return;
+  }
+
+  new_entry->label=label;
+
+  if(break_head==NULL){
+    break_head=new_entry;
+  }
+  else{
+    new_entry->next=break_head;
+    break_head=new_entry;
+  }
+}
+
+///////////////////////////////////////////////////////
+void backpatch_break(int label){
+
+  struct tf_node *ptr;
+  ptr=break_head;
+
+  if(ptr==NULL){return;}
+  while (ptr!=NULL) {
+    int i=0;
+    for(i;i<currQuad;i++){
+      if(i==ptr->label){
+        (quads+i)->label=label;
+        break;
+      }
+    }
+    ptr=ptr->next;
+  }
+  break_head=NULL;
 }

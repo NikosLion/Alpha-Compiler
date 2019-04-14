@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "quads.h"
-#include "Stack.h"
+#include "Quads.h"
+#include "Offset_stack.h"
 #include "Function_stack.h"
 
 extern int yylineno;
@@ -18,6 +18,8 @@ int lvalue_flag=0;
 int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
+int else_flag=0;
+int lab=0;
 
 
 
@@ -67,23 +69,36 @@ void yyerror(const char *s);
 %%
 
 
-program:	program stmt	 {fprintf(GOUT,"program: program stmt\n");}
-	     |                 {fprintf(GOUT,"program: \n");}
+program:	program stmt {
+            fprintf(GOUT,"program: program stmt\n");
+
+          }
+
+	     |   {
+              fprintf(GOUT,"program: \n");
+              if(else_flag==1){
+                jump_head=NULL;
+                else_flag=0;
+              }
+            }
 	     ;
 
 stmt:	expr SEMICOLON  {
-        fprintf(GOUT,"stmt: expr ;  \n");
+        fprintf(GOUT,"stmt: expr ;\n");
 
         struct expr *temp;
         temp=(struct expr*)malloc(sizeof(struct expr));
+
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         temp->sym=sym;
+
         temp->sym->offset=currScopeOffset();
         temp->sym->space=currScopeSpace();
         temp->sym->name=temp_name();
         temp->type=var_e;
         incCurrScopeOffset();
+
         if(scope==0){
           insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
         }
@@ -105,76 +120,270 @@ stmt:	expr SEMICOLON  {
 
         if($1->type==boolexpr_e){
           emit(assign,temp_true,NULL,temp,0,yylineno);
+
           backpatch($1,currQuad-1,1);
+
           emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
           emit(assign,temp_false,NULL,temp,0,yylineno);
-          //periptwsh or
-          if($1->int_real==-5){
-            backpatch($1,$1->true_list->label,0);
-          }
-          //periptwsh and
-          else if($1->int_real==-6){
-            backpatch($1,currQuad-1,0);
-          }
-        }
 
+          backpatch($1,currQuad-1,0);
+        }
       }
+
     | ifprefix  {
-        fprintf(GOUT,"stmt: ifprefix\n");
-        //if_backpatch($1,0);
-      }
+       fprintf(GOUT,"stmt: ifprefix\n");
+       struct expr *temp_true;
+       temp_true=(struct expr*)malloc(sizeof(struct expr));
+       temp_true->type=constbool_e;
+       temp_true->value.boolean=1;
+       temp_true->int_real=-2;
+
+       struct expr *temp_false;
+       temp_false=(struct expr*)malloc(sizeof(struct expr));
+       temp_false->type=constbool_e;
+       temp_false->value.boolean=0;
+       temp_false->int_real=-2;
+
+       struct expr *temp;
+       temp=(struct expr*)malloc(sizeof(struct expr));
+       struct SymbolTableEntry *sym;
+       sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+       temp->sym=sym;
+       temp->sym->offset=currScopeOffset();
+       temp->sym->space=currScopeSpace();
+       temp->sym->name=temp_name();
+       temp->type=var_e;
+       incCurrScopeOffset();
+
+       if(scope==0){
+         insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+       }
+       else{
+         insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+       }
+
+       emit(jump,NULL,NULL,NULL,0,yylineno);
+       emit(assign,temp_true,NULL,temp,0,yylineno);
+
+       backpatch($1,currQuad-1,1);
+
+       emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+       emit(assign,temp_false,NULL,temp,0,yylineno);
+
+       backpatch($1,currQuad-1,0);
+
+       emit(if_eq,temp,temp_true,NULL,0,yylineno);
+
+       backpatch_rat(currQuad,$1->true_list->label);
+       backpatch_jat(currQuad);
+
+       lab=$1->true_list->label;
+       $$=$1;
+     }
+
+
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
-        //if_backpatch($1,0);
 
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        struct expr *temp_false;
+        temp_false=(struct expr*)malloc(sizeof(struct expr));
+        temp_false->type=constbool_e;
+        temp_false->value.boolean=0;
+        temp_false->int_real=-2;
+
+        struct expr *temp;
+        temp=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp->sym=sym;
+        temp->sym->offset=currScopeOffset();
+        temp->sym->space=currScopeSpace();
+        temp->sym->name=temp_name();
+        temp->type=var_e;
+        incCurrScopeOffset();
+
+        if(scope==0){
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
+        emit(jump,NULL,NULL,NULL,0,yylineno);
+        emit(assign,temp_true,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,1);
+
+        emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+        emit(assign,temp_false,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,0);
+
+        emit(if_eq,temp,temp_true,NULL,0,yylineno);
+
+        backpatch_rat(currQuad,$1->true_list->label);
+        backpatch_jat(currQuad+1);
+
+        emit(jump,NULL,NULL,NULL,0,yylineno);
+
+        backpatch_jaf(currQuad-1,lab);
+        backpatch_else(currQuad-1,($1->value.intValue)+1);
+        lab=$1->true_list->label;
+        $$=$1;
       }
+
     | whilestmt {
         fprintf(GOUT,"stmt: whilestmt\n");
-        //if_backpatch($1,1);
 
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        struct expr *temp_false;
+        temp_false=(struct expr*)malloc(sizeof(struct expr));
+        temp_false->type=constbool_e;
+        temp_false->value.boolean=0;
+        temp_false->int_real=-2;
+
+        struct expr *temp;
+        temp=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp->sym=sym;
+        temp->sym->offset=currScopeOffset();
+        temp->sym->space=currScopeSpace();
+        temp->sym->name=temp_name();
+        temp->type=var_e;
+        incCurrScopeOffset();
+
+        if(scope==0){
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
+        emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
+        emit(assign,temp_true,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,1);
+
+        emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+        emit(assign,temp_false,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,0);
+
+        emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
+
+        if(break_head!=NULL){
+          backpatch_break(currQuad);
+        }
+
+        $$=$1;
       }
+
     | forstmt {
         fprintf(GOUT,"stmt: forstmt\n");
-        //if_backpatch($1,2);
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        struct expr *temp_false;
+        temp_false=(struct expr*)malloc(sizeof(struct expr));
+        temp_false->type=constbool_e;
+        temp_false->value.boolean=0;
+        temp_false->int_real=-2;
+
+        struct expr *temp;
+        temp=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp->sym=sym;
+        temp->sym->offset=currScopeOffset();
+        temp->sym->space=currScopeSpace();
+        temp->sym->name=temp_name();
+        temp->type=var_e;
+        incCurrScopeOffset();
+
+        if(scope==0){
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
+        emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
+        emit(assign,temp_true,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,1);
+
+        emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+        emit(assign,temp_false,NULL,temp,0,yylineno);
+
+        backpatch($1,currQuad-1,0);
+
+        emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
+
+        if(break_head!=NULL){
+          backpatch_break(currQuad);
+        }
+
+        $$=$1;
       }
-    | returnstmt  {fprintf(GOUT,"stmt: returnstmt\n");}
-    | BREAK SEMICOLON{
+    | returnstmt  {
+        fprintf(GOUT,"stmt: returnstmt\n");
+      }
+    | BREAK SEMICOLON {
         fprintf(GOUT,"statement: break ;\n");
-      	if(inside_loop==0){
-      		fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
-                exit(0);
-      	}
+        if(inside_loop==0){
+        	fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
+          exit(0);
+        }
+        insert_break_list(currQuad);
+        emit(jump,NULL,NULL,NULL,0,yylineno);
+
+
 	    }
-    | CONTINUE SEMICOLON	 {
+    | CONTINUE SEMICOLON  {
     		fprintf(GOUT,"statement: continue ;\n");
     		if(inside_loop==0){
     			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
-                exit(0);
+          exit(0);
     		}
+        emit(jump,NULL,NULL,NULL,0,yylineno);
     	}
-    | block   {fprintf(GOUT,"stmt: block\n");}
-    | funcdef         	   {fprintf(GOUT,"stmt: funcdef\n");}
-    | SEMICOLON       	   {fprintf(GOUT,"stmt: SEMICOLON\n");}
+    | block {fprintf(GOUT,"stmt: block\n");}
+    | funcdef {fprintf(GOUT,"stmt: funcdef\n");}
+    | SEMICOLON {fprintf(GOUT,"stmt: SEMICOLON\n");}
 	  ;
 
-expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}    //!!!!!!!!!!! isws oxi $$=$1
+expr:	assignexpr  {fprintf(GOUT,"expr: assignexpr\n"); $$=$1;}
     | arithmeticop  {fprintf(GOUT,"expr: arithmeticop\n"); $$=$1;}
     | booleanop {fprintf(GOUT,"expr: booleanop\n"); $$=$1;}
     | relativeop  {fprintf(GOUT,"expr: relativeop\n"); $$=$1;}
     | term {
         fprintf(GOUT,"expr: term\n");
         if(lvalue_flag==1){
-          $$=$1;
           lvalue_flag=0;
         }
         else if(const_flag==1){
-          $$=$1;
           const_flag=0;
         }
         else if(func_flag==1){
-          $$=$1;
           func_flag=0;
         }
+        $$=$1;
       }
     ;
 
@@ -370,11 +579,7 @@ booleanop:		expr AND expr {
 
                 struct expr *temp;
                 temp=(struct expr*)malloc(sizeof(struct expr));
-                struct SymbolTableEntry *sym;
-                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                temp->sym=sym;
-                temp->sym->name=temp_name();
-                temp->type=var_e;
+                temp->type=boolexpr_e;
                 temp->int_real=-6;
 
                 struct expr *temp_true;
@@ -389,22 +594,29 @@ booleanop:		expr AND expr {
                 temp_false->value.boolean=0;
                 temp_false->int_real=-2;
 
-                if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                if(($1->type==var_e) || ($1->type!=boolexpr_e)){
+                  emit(if_eq,$1,temp_true,NULL,0,yylineno);
+                  emit(jump,NULL,NULL,NULL,0,yylineno);
+                  insert_tf_list($1,1,currQuad-2);
+                  insert_tf_list($1,0,currQuad-1);
                 }
-                else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                if(($3->type==var_e) || ($3->type!=boolexpr_e)){
+                  emit(if_eq,$3,temp_true,NULL,0,yylineno);
+                  emit(jump,NULL,NULL,NULL,0,yylineno);
+                  insert_tf_list($3,1,currQuad-2);
+                  insert_tf_list($3,0,currQuad-1);
                 }
 
-                emit(if_eq,$1,temp_true,NULL,currQuad+2,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+5,yylineno);
-                emit(if_eq,$3,temp_true,NULL,currQuad+2,yylineno);
-                emit(jump,NULL,NULL,NULL,currQuad+3,yylineno);
-                emit(assign,temp_true,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-                emit(assign,temp_false,NULL,temp,0,yylineno);
-                emit(jump,NULL,NULL,NULL,0,yylineno);
-                //temp->sym->name=$1->sym->name;
+                if((($1->type==var_e) || ($1->type!=boolexpr_e)) && $3->type==boolexpr_e){
+                  backpatch($3,$1->true_list->label,1);
+                  temp->true_list=$1->true_list;
+                  merge_tf_list($1,$3,temp,0);
+                }
+                else{
+                  backpatch($1,$3->true_list->label,1);
+                  temp->true_list=$3->true_list;
+                  merge_tf_list($1,$3,temp,0);
+                }
                 $$=temp;
               }
 		 |		expr OR expr {
@@ -433,13 +645,18 @@ booleanop:		expr AND expr {
               insert_tf_list($3,1,currQuad-2);
               insert_tf_list($3,0,currQuad-1);
             }
-            //backpatch $1->false_list sto label tou quad tou $3
-            merge_tf_list($1,$3,temp,0);
-            backpatch($1,$3->true_list->label,0);
-            merge_tf_list($1,$3,temp,1);
-            temp->false_list=$3->false_list;
-            printf("!!!!!!!!!!!!!!!!!!!!!!   %d\n",temp->false_list->label);
 
+            if((($1->type==var_e) || ($1->type!=boolexpr_e)) && $3->type==boolexpr_e){
+              backpatch($3,$1->true_list->label,0);
+              merge_tf_list($1,$3,temp,1);
+              temp->false_list=$1->false_list;
+            }
+            else{
+              //backpatch $1->false_list sto label tou quad tou $3
+              backpatch($1,$3->true_list->label,0);
+              merge_tf_list($1,$3,temp,1);
+              temp->false_list=$3->false_list;
+            }
             $$=temp;
           }
 		 ;
@@ -465,12 +682,27 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         fprintf(GOUT,"term: ! expr\n");
         struct expr *temp_not;
         temp_not=(struct expr*)malloc(sizeof(struct expr));
-        struct SymbolTableEntry *sym;
-        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        temp_not->sym=sym;
-        temp_not->type=var_e;
-        temp_not->sym->name=temp_name();
-        emit(not,$2,NULL,temp_not,0,yylineno);
+        temp_not->type=boolexpr_e;
+
+        struct expr *temp_true;
+        temp_true=(struct expr*)malloc(sizeof(struct expr));
+        temp_true->type=constbool_e;
+        temp_true->value.boolean=1;
+        temp_true->int_real=-2;
+
+        if(($2->type==var_e) || ($2->type!=boolexpr_e)){
+          emit(if_eq,$2,temp_true,NULL,0,yylineno);
+          emit(jump,NULL,NULL,NULL,0,yylineno);
+          insert_tf_list(temp_not,1,currQuad-1);
+          insert_tf_list(temp_not,0,currQuad-2);
+        }
+        else{
+          tf_node* temp_list;
+          temp_list=$2->true_list;
+          $2->true_list=$2->false_list;
+          $2->false_list=temp_list;
+          temp_not=$2;
+        }
         $$=temp_not;
       }
 	|		INCR lvalue{
@@ -552,7 +784,7 @@ assignexpr:	lvalue ASSIGN expr{
               }
               if($3->type==programfunc_e || $3->type==libraryfunc_e){
                 change_type($1->sym->name);
-                $1->type=$3->type;        //isws na prepei na mpei e3w apo thn if
+                $1->type=$3->type;                  //isws na prepei na mpei e3w apo thn if
               }
 
               struct expr *temp;
@@ -692,7 +924,8 @@ lvalue:		IDENTIFIER {
     			}
     		}
 	  }
-	  |		LOCAL IDENTIFIER		{
+	  |  LOCAL IDENTIFIER  {
+
 			fprintf(GOUT,"lvalue: local IDENTIFIER\n");
 
 			struct expr *temp_maloc;
@@ -702,8 +935,6 @@ lvalue:		IDENTIFIER {
       sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
       temp_maloc->sym=sym;
-
-
 
 			if(look_lib_func($2)){
 				fprintf(GOUT,"Error at line %d: Local identifier trying to shadow library function: %s\n", yylineno,$2);
@@ -751,7 +982,8 @@ lvalue:		IDENTIFIER {
 				}
 			}
 	  }
-	  |		DOUBLE_COLON IDENTIFIER	{
+
+	  |  DOUBLE_COLON IDENTIFIER {
 			fprintf(GOUT,"lvalue: ::IDENTIFIER\n");
 
 			struct expr *temp_maloc;
@@ -781,13 +1013,14 @@ lvalue:		IDENTIFIER {
 				exit(0);
 			}
 	  }
-	  |		member			{fprintf(GOUT,"lvalue: member\n");}
+
+	  |		member  {fprintf(GOUT,"lvalue: member\n");}
       ;
 
-member:		lvalue DOT IDENTIFIER			{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
-      |		lvalue L_BRACKET expr R_BRACKET	{fprintf(GOUT,"member: lvalue[expr]\n");}   //pinakas
-      |		call DOT IDENTIFIER				{fprintf(GOUT,"member: call.IDENTIFIER\n");}
-      |		call L_BRACKET expr R_BRACKET	{fprintf(GOUT,"member: call[expr]\n");}       //pinakas
+member:		lvalue DOT IDENTIFIER	{fprintf(GOUT,"member: lvalue.IDENTIFIER\n");}
+      |		lvalue L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: lvalue[expr]\n");}   //pinakas
+      |		call DOT IDENTIFIER  {fprintf(GOUT,"member: call.IDENTIFIER\n");}
+      |		call L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: call[expr]\n");}       //pinakas
       ;
 
 call:		lvalue callsuffix {
@@ -796,7 +1029,6 @@ call:		lvalue callsuffix {
             fprintf(GOUT,"Error at line %d: Invalid call\n",yylineno);
             exit(0);
           }
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$1,0,yylineno);
 
@@ -811,9 +1043,9 @@ call:		lvalue callsuffix {
           emit(getretval,NULL,NULL,new_ret,0,yylineno);
           $$=new_ret;
         }
+
     |		L_PARENTHESIS funcdef R_PARENTHESIS L_PARENTHESIS elist R_PARENTHESIS	{
           fprintf(GOUT,"call: ( funcdef ) ( elist )\n");
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$2,0,yylineno);
 
@@ -828,9 +1060,9 @@ call:		lvalue callsuffix {
           emit(getretval,NULL,NULL,new_ret,0,yylineno);
           $$=new_ret;
         }
+
     | 	call L_PARENTHESIS elist R_PARENTHESIS {
           fprintf(GOUT,"call: ( elist )\n");
-          //delete_call_args(scope,call_args_counter);
           call_args_counter=0;
           emit(call,NULL,NULL,$1,0,yylineno);
 
@@ -847,8 +1079,8 @@ call:		lvalue callsuffix {
         }
     ;
 
-callsuffix:	normcall {fprintf(GOUT,"callsuffix: normcall\n");}
-    	  |	methodcall	{fprintf(GOUT,"callsuffix: methodcall\n");}
+callsuffix:	normcall  {fprintf(GOUT,"callsuffix: normcall\n");}
+    	  |	methodcall {fprintf(GOUT,"callsuffix: methodcall\n");}
     	  ;
 
 normcall:	L_PARENTHESIS elist R_PARENTHESIS	{fprintf(GOUT,"normcall: ( elist )\n");}
@@ -893,9 +1125,10 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
-
             emit(param,new_param,NULL,NULL,0,yylineno);
+            $$=$1;
           }
+
      |		elist COMMA expr{
             fprintf(GOUT,"elist: elist, expr\n");
             call_args_counter++;
@@ -932,16 +1165,18 @@ elist:		expr {
               }
             }
             emit(param,new_param,NULL,NULL,0,yylineno);
+
           }
+
      |    {fprintf(GOUT,"elist: \n");}
      ;
 
-objectdef:	L_BRACKET elist R_BRACKET		  {fprintf(GOUT,"objectdef: [ elist ]\n");}
-    	 |	  L_BRACKET indexed R_BRACKET		{fprintf(GOUT,"objectdef: [ indexed ]\n");}
+objectdef:	L_BRACKET elist R_BRACKET  {fprintf(GOUT,"objectdef: [ elist ]\n");}
+    	 |	  L_BRACKET indexed R_BRACKET {fprintf(GOUT,"objectdef: [ indexed ]\n");}
     	 ;
 
-indexed:	indexedelem					       {fprintf(GOUT,"indexedelem\n");}
-	   | 	indexed COMMA indexedelem 	 {fprintf(GOUT,"indexed: indexed , indexedelem\n");}
+indexed:	indexedelem  {fprintf(GOUT,"indexedelem\n");}
+	   | 	indexed COMMA indexedelem  {fprintf(GOUT,"indexed: indexed , indexedelem\n");}
 	   ;
 
 indexedelem:	L_CURLY expr COLON expr R_CURLY	{
@@ -958,9 +1193,10 @@ block:		L_CURLY {
             fprintf(GOUT,"block: { program }\n");
   					scope++;
 				  }
+
 				  program R_CURLY{
-          HideVar(scope);
-          scope--;
+            HideVar(scope);
+            scope--;
           }
      ;
 
@@ -993,7 +1229,6 @@ funcdef:	FUNCTION IDENTIFIER {
 
          f_push(new_func->sym->name);
          emit(funcstart,NULL,NULL,new_func,0,yylineno);
-
 		   }
     } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
 
@@ -1034,7 +1269,6 @@ funcdef:	FUNCTION IDENTIFIER {
         new_func->sym=sym;
 
         new_func->sym->name=temp_name_func();
-        //decrs_temp_func_counter();
         new_func->type=programfunc_e;
         new_func->value.intValue=currQuad;
 
@@ -1175,19 +1409,8 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-        /*
-          struct expr *new_arg;
-          new_arg=(struct expr*)malloc(sizeof(struct expr));
-          struct SymbolTableEntry *sym;
-          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-          new_arg->sym=sym;
-          new_arg->sym->name=$1;
-          new_arg->type=var_e;
-          emit(param,NULL,NULL,new_arg,0,yylineno);
-        */
           incCurrScopeOffset();
 					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
-
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -1205,72 +1428,52 @@ idlist:		IDENTIFIER {
 					exit(0);
 				}
 				else{
-          /*
-          struct expr *new_arg;
-          new_arg=(struct expr*)malloc(sizeof(struct expr));
-          struct SymbolTableEntry *sym;
-          sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-          new_arg->sym=sym;
-          new_arg->sym->name=$3;
-          new_arg->type=var_e;
-          emit(param,NULL,NULL,new_arg,0,yylineno);
-          */
           incCurrScopeOffset();
 					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
 				}
 			}
+
 	  |			{fprintf(GOUT,"idlist: \n");}
       ;
 
 ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             fprintf(GOUT,"ifprefix: if ( expr ) stmt\n");
-
-            struct expr *temp_true;
-            temp_true=(struct expr*)malloc(sizeof(struct expr));
-            temp_true->type=constbool_e;
-            temp_true->value.boolean=1;
-            temp_true->int_real=-2;
-
+            if(($3->type==var_e) || ($3->type!=boolexpr_e)){
+              fprintf(GOUT,"Error at line %d: Invalid IF condition\n",yylineno);
+              exit(0);
+            }
             emit(jump,NULL,NULL,NULL,0,yylineno);
-            emit(if_eq,$3,temp_true,NULL,0,yylineno);
-            //$$=make_if_quad(currQuad,$3);
+            insert_jump_list(currQuad-1);
+            $3->value.intValue=jump_head->label;
+            $$=$3;
           }
 	    ;
 
 ifstmt: 	ifprefix ELSE stmt {
             fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
+            insert_jump_list(currQuad);
+            $$=$1;
           }
       ;
 
 whilestmt:	WHILE L_PARENTHESIS expr  R_PARENTHESIS {inside_loop++;} stmt{
       				fprintf(GOUT,"whilestmt: while ( expr ) stmt\n");
-
-              struct expr *temp_true;
-              temp_true=(struct expr*)malloc(sizeof(struct expr));
-              temp_true->type=constbool_e;
-              temp_true->value.boolean=1;
-              temp_true->int_real=-2;
-
-              emit(jump,NULL,NULL,NULL,0,yylineno);
-              emit(if_eq,$3,temp_true,NULL,0,yylineno);
-
-              //$$=make_if_quad(currQuad,$3);
+              if(($3->type==var_e) || ($3->type!=boolexpr_e)){
+                fprintf(GOUT,"Error at line %d: Invalid WHILE condition\n",yylineno);
+                exit(0);
+              }
+              $$=$3;
       				inside_loop--;
       			}
     	 ;
 
 forstmt:	FOR L_PARENTHESIS elist SEMICOLON expr SEMICOLON elist R_PARENTHESIS {inside_loop++;} stmt	{
 				fprintf(GOUT,"forstmt: for ( elist; expr; elist ) stmt\n");
-
-        struct expr *temp_true;
-        temp_true=(struct expr*)malloc(sizeof(struct expr));
-        temp_true->type=constbool_e;
-        temp_true->value.boolean=1;
-        temp_true->int_real=-2;
-
-        emit(jump,NULL,NULL,NULL,0,yylineno);
-        emit(if_eq,$5,temp_true,NULL,0,yylineno);
-        //$$=make_if_quad(currQuad,$5);
+        if(($5->type==var_e) || ($5->type!=boolexpr_e)){
+          fprintf(GOUT,"Error at line %d: Invalid FOR condition\n",yylineno);
+          exit(0);
+        }
+        $$=$5;
 				inside_loop--;
 			}
        ;
@@ -1285,6 +1488,7 @@ returnstmt:	RETURN SEMICOLON{
               new_ret=(struct expr*)malloc(sizeof(struct expr));
               emit(Return,NULL,NULL,NULL,0,yylineno);
             }
+
     	  | RETURN expr SEMICOLON	{
             fprintf(GOUT,"returnstmt: return expr ;\n");
             if(inside_function==0){
@@ -1295,6 +1499,9 @@ returnstmt:	RETURN SEMICOLON{
           }
     	  ;
 %%
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 void yyerror(const char *s){
   if(s=="EOF"){
@@ -1314,20 +1521,17 @@ void yyerror(const char *s){
       exit(0);
     }
   }
-
 }
-
-
-
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv){
-  //init_symTable();
 
+  //init_symTable();
   programVarOffset=0;
   functionLocalOffset=0;
   formalArgOffset=0;
   scopeSpaceCounter=1;
-
 
   FILE *ifp, *ofp;
   ifp = fopen(argv[1], "r");
@@ -1360,7 +1564,7 @@ int main(int argc, char **argv){
   fclose(yyin);
 
   if(GOUT!=stdout){
-	fclose(GOUT);
+	   fclose(GOUT);
   }
 
   return 0;

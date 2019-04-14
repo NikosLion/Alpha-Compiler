@@ -6,15 +6,16 @@
 
 struct Function_stack* f_stack_head=NULL;
 
+///////////////////////////////////////////////////////////////////////
+
 char* f_pop(){
   struct Function_stack*  temp;
   temp=(struct Function_stack*)malloc(sizeof(struct Function_stack));
   assert(temp!=NULL);
-
   char* ret;
 
   if(f_stack_head==NULL){
-    printf("Stack Empty !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printf("!!!!!!!!!! Empty Stack !!!!!!!!!!\n");
     return (char*)-1;
   }
   else{
@@ -25,11 +26,10 @@ char* f_pop(){
     return ret;
   }
 }
-///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 void f_push(char* c){
   struct Function_stack*  temp;
   temp=(struct Function_stack*)malloc(sizeof(struct Function_stack));
-
   assert(temp!=NULL);
   if(f_stack_head==NULL){
     f_stack_head=temp;
@@ -45,11 +45,10 @@ void f_push(char* c){
 void f_print_stack(){
   struct Function_stack*  temp;
   temp=(struct Function_stack*)malloc(sizeof(struct Function_stack));
-
-  assert(temp!=NULL);
   temp=f_stack_head;
+  assert(temp!=NULL);
   while(temp!=NULL){
-    printf("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   %s \n",temp->name);
+    printf("From Function Stack:  %s\n",temp->name);
     temp=temp->next;
   }
 }
