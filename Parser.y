@@ -1227,7 +1227,7 @@ funcdef:	FUNCTION IDENTIFIER {
          push(currScopeOffset());
          enterScopeSpace();
 
-         f_push(new_func->sym->name);
+         f_push(new_func->sym->name,currQuad);
          emit(funcstart,NULL,NULL,new_func,0,yylineno);
 		   }
     } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
@@ -1246,9 +1246,11 @@ funcdef:	FUNCTION IDENTIFIER {
         exitScopeSpace();
         exitScopeSpace();
 
-        new_func->sym->name=f_pop();
+        //new_func->sym->name=f_pop();
+        Function_stack* temp_func=f_pop();
+        new_func->sym->name=temp_func->name;
+        new_func->value.intValue=temp_func->label;
         new_func->type=programfunc_e;
-        new_func->value.intValue=currQuad;
         new_func->sym->offset=currScopeOffset();
         new_func->sym->space=currScopeSpace();
         $$=new_func;
@@ -1276,7 +1278,7 @@ funcdef:	FUNCTION IDENTIFIER {
         push(currScopeOffset());
         enterScopeSpace();
 
-        f_push(new_func->sym->name);
+        f_push(new_func->sym->name,currQuad);
         emit(funcstart,NULL,NULL,new_func,0,yylineno);
 
 		}	L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();}block {
@@ -1295,9 +1297,10 @@ funcdef:	FUNCTION IDENTIFIER {
         exitScopeSpace();
         exitScopeSpace();
 
-        new_func->sym->name=f_pop();
+        Function_stack* temp_func=f_pop();
+        new_func->sym->name=temp_func->name;
+        new_func->value.intValue=temp_func->label;
         new_func->type=programfunc_e;
-        new_func->value.intValue=currQuad;
         new_func->sym->offset=currScopeOffset();
         new_func->sym->space=currScopeSpace();
         $$=new_func;

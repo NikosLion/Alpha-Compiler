@@ -8,35 +8,37 @@ struct Function_stack* f_stack_head=NULL;
 
 ///////////////////////////////////////////////////////////////////////
 
-char* f_pop(){
+Function_stack* f_pop(){
   struct Function_stack*  temp;
   temp=(struct Function_stack*)malloc(sizeof(struct Function_stack));
   assert(temp!=NULL);
-  char* ret;
+  //char* ret;
 
   if(f_stack_head==NULL){
     printf("!!!!!!!!!! Empty Stack !!!!!!!!!!\n");
-    return (char*)-1;
+    return NULL;
   }
   else{
     temp=f_stack_head;
     f_stack_head=temp->next;
-    ret=temp->name;
-    free(temp);
-    return ret;
+    //ret=temp->name;
+    //free(temp);
+    return temp;
   }
 }
 ///////////////////////////////////////////////////////////////////////
-void f_push(char* c){
+void f_push(char* c,int label){
   struct Function_stack*  temp;
   temp=(struct Function_stack*)malloc(sizeof(struct Function_stack));
   assert(temp!=NULL);
   if(f_stack_head==NULL){
     f_stack_head=temp;
     f_stack_head->name=c;
+    f_stack_head->label=label;
   }
   else{
     temp->name=c;
+    temp->label=label;
     temp->next=f_stack_head;
     f_stack_head=temp;
   }
