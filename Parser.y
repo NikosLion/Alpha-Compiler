@@ -286,6 +286,9 @@ stmt:	expr SEMICOLON  {
         if(break_head!=NULL){
           backpatch_break(currQuad);
         }
+        if(continue_head!=NULL){
+          backpatch_continue($1->true_list->label);
+        }
 
         $$=$1;
       }
@@ -338,7 +341,10 @@ stmt:	expr SEMICOLON  {
         if(break_head!=NULL){
           backpatch_break(currQuad);
         }
-        
+        if(continue_head!=NULL){
+          backpatch_continue($1->true_list->label);
+        }
+
         $$=$1;
       }
     | returnstmt  {
@@ -352,8 +358,6 @@ stmt:	expr SEMICOLON  {
         }
         insert_break_list(currQuad);
         emit(jump,NULL,NULL,NULL,0,yylineno);
-
-
 	    }
     | CONTINUE SEMICOLON  {
     		fprintf(GOUT,"statement: continue ;\n");
@@ -361,6 +365,7 @@ stmt:	expr SEMICOLON  {
     			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
           exit(0);
     		}
+        insert_continue_list(currQuad);
         emit(jump,NULL,NULL,NULL,0,yylineno);
     	}
     | block {fprintf(GOUT,"stmt: block\n");}

@@ -11,6 +11,7 @@ int currQuad;
 
 struct jump_after_true *jump_head;
 struct tf_node *break_head;
+struct tf_node *continue_head;
 
 unsigned programVarOffset;
 unsigned functionLocalOffset;
@@ -87,7 +88,9 @@ void backpatch_rat(int cur,int label);
 void backpatch_jaf(int cur,int lab);
 void backpatch_else(int cur,int label);
 void insert_break_list(int label);
+void insert_continue_list(int label);
 void backpatch_break(int label);
+void backpatch_continue(int label);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
