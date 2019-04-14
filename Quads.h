@@ -10,6 +10,7 @@ unsigned total;
 int currQuad;
 
 struct jump_after_true *jump_head;
+struct tf_node *break_head;
 
 unsigned programVarOffset;
 unsigned functionLocalOffset;
@@ -23,7 +24,7 @@ enum iopcode{
   mul,          if_eq,        call,         tablegetelem,
   Div,          if_noteq,     param,        tablesetelem,
   mod,          if_lesseq,    Return,       uminus,
-  if_greatereq, getretval,    no_op
+  if_greatereq, getretval
 };
 
 enum expr_t{
@@ -85,6 +86,8 @@ void backpatch_jat(int label);
 void backpatch_rat(int cur,int label);
 void backpatch_jaf(int cur,int lab);
 void backpatch_else(int cur,int label);
+void insert_break_list(int label);
+void backpatch_break(int label);
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

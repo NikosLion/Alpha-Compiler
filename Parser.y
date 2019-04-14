@@ -273,13 +273,21 @@ stmt:	expr SEMICOLON  {
 
         emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
         emit(assign,temp_true,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,1);
+
         emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
         emit(assign,temp_false,NULL,temp,0,yylineno);
-        backpatch($1,currQuad-1,0);
-        emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
-        $$=$1;
 
+        backpatch($1,currQuad-1,0);
+
+        emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
+
+        if(break_head!=NULL){
+          backpatch_break(currQuad);
+        }
+
+        $$=$1;
       }
 
     | forstmt {
@@ -317,11 +325,20 @@ stmt:	expr SEMICOLON  {
 
         emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
         emit(assign,temp_true,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,1);
+
         emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
         emit(assign,temp_false,NULL,temp,0,yylineno);
+
         backpatch($1,currQuad-1,0);
+
         emit(if_eq,temp,temp_true,NULL,($1->false_list->label)+1,yylineno);
+
+        if(break_head!=NULL){
+          backpatch_break(currQuad);
+        }
+        
         $$=$1;
       }
     | returnstmt  {
@@ -331,15 +348,20 @@ stmt:	expr SEMICOLON  {
         fprintf(GOUT,"statement: break ;\n");
         if(inside_loop==0){
         	fprintf(GOUT,"Error at line %d: Break statement not inside a loop.\n", yylineno);
-                exit(0);
+          exit(0);
         }
+        insert_break_list(currQuad);
+        emit(jump,NULL,NULL,NULL,0,yylineno);
+
+
 	    }
     | CONTINUE SEMICOLON  {
     		fprintf(GOUT,"statement: continue ;\n");
     		if(inside_loop==0){
     			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
-                exit(0);
+          exit(0);
     		}
+        emit(jump,NULL,NULL,NULL,0,yylineno);
     	}
     | block {fprintf(GOUT,"stmt: block\n");}
     | funcdef {fprintf(GOUT,"stmt: funcdef\n");}
