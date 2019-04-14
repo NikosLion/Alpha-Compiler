@@ -108,7 +108,14 @@ stmt:	expr SEMICOLON  {
           backpatch($1,currQuad-1,1);
           emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
           emit(assign,temp_false,NULL,temp,0,yylineno);
-          backpatch($1,currQuad-1,0);
+          //periptwsh or
+          if($1->int_real==-5){
+            backpatch($1,$1->true_list->label,0);
+          }
+          //periptwsh and
+          else if($1->int_real==-6){
+            backpatch($1,currQuad-1,0);
+          }
         }
 
       }
@@ -406,7 +413,7 @@ booleanop:		expr AND expr {
             struct expr *temp;
             temp=(struct expr*)malloc(sizeof(struct expr));
             temp->type=boolexpr_e;
-            temp->value.boolean=1;
+            temp->int_real=-5;
 
             struct expr *temp_true;
             temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -427,9 +434,11 @@ booleanop:		expr AND expr {
               insert_tf_list($3,0,currQuad-1);
             }
             //backpatch $1->false_list sto label tou quad tou $3
+            merge_tf_list($1,$3,temp,0);
             backpatch($1,$3->true_list->label,0);
             merge_tf_list($1,$3,temp,1);
             temp->false_list=$3->false_list;
+            printf("!!!!!!!!!!!!!!!!!!!!!!   %d\n",temp->false_list->label);
 
             $$=temp;
           }
