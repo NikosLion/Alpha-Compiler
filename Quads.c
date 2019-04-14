@@ -4,7 +4,7 @@
 #include "Quads.h"
 
 
-////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 quad *if_quad;
 
 quad* quads = (quad*) 0;
@@ -12,7 +12,7 @@ quad* quads = (quad*) 0;
 struct expr *temp_expr;
 struct SymbolTableEntry *t_sym;
 
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
 
   if(currQuad == total){
@@ -28,7 +28,7 @@ void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned 
   currQuad++;
 }
 
-///////////////////////////////////////
+///////////////////////////////////////////////////////
 void expand(){
   assert(total == currQuad);
   quad* p=(quad*)malloc(NEW_SIZE);
@@ -40,7 +40,7 @@ void expand(){
   total=total+EXPAND_SIZE;
 }
 
-///////////////////////////////////////
+///////////////////////////////////////////////////////
 enum scopespace_t currScopeSpace(void){
   if(scopeSpaceCounter == 1){
     return programvar;
@@ -53,7 +53,7 @@ enum scopespace_t currScopeSpace(void){
   }
 }
 
-/////////////////////////////////////
+///////////////////////////////////////////////////////
 unsigned currScopeOffset(void){
   switch (currScopeSpace()){
     case programvar : return programVarOffset;
@@ -62,7 +62,7 @@ unsigned currScopeOffset(void){
     default: assert(0);
   }
 }
-//////////////////////////////////////
+///////////////////////////////////////////////////////
 void incCurrScopeOffset(void){
   switch (currScopeSpace()){
     case programvar : ++programVarOffset; break;
@@ -71,18 +71,18 @@ void incCurrScopeOffset(void){
   }
 }
 
-//////////////////////////////////////
+///////////////////////////////////////////////////////
 void enterScopeSpace(void){
   ++scopeSpaceCounter;
 }
 
-////////////////////////////////////
+///////////////////////////////////////////////////////
 void exitScopeSpace(void){
   assert(scopeSpaceCounter>1);
   --scopeSpaceCounter;
 }
 
-/////////////////////////////////////
+///////////////////////////////////////////////////////
 void restoreCurScopeOffset(unsigned old_offset){
   switch (currScopeSpace()){
     case programvar : programVarOffset=old_offset; break;
@@ -90,7 +90,8 @@ void restoreCurScopeOffset(unsigned old_offset){
     case formalarg : formalArgOffset=old_offset; break;
   }
 }
-/////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
 char* return_op(int op){
   switch (op) {
     case 0 : return "assign";
@@ -123,7 +124,7 @@ char* return_op(int op){
   }
 }
 
-////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void print_quads(FILE* out){
   fprintf(out,"######################################################################################################################################\n\n");
 	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
@@ -228,7 +229,7 @@ void print_quads(FILE* out){
   fprintf(out,"\n######################################################################################################################################\n\n");
 }
 
-///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 int make_bool(struct expr *expr){
   if(expr==NULL){
     return 0;
@@ -343,49 +344,8 @@ int make_bool(struct expr *expr){
     }
   }
 }
-////////////////////////////////////////////////////////////////////////
 
-expr* make_if_quad(int label, expr* temp){
-
-  temp_expr=(struct expr*)malloc(sizeof(struct expr));
-  t_sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-  temp_expr->sym=t_sym;
-  if(temp->type==var_e){
-    temp_expr->sym->name=temp->sym->name;
-  }
-  else if(temp->type==constnum_e){
-    if(temp->int_real==1){
-      char s[20];
-      sprintf(s,"%d",temp->value.intValue);
-      temp_expr->sym->name=s;
-    }
-    else if(temp->int_real==0){
-      char s[20];
-      sprintf(s,"%d",temp->value.intValue);
-      temp_expr->sym->name=s;
-    }
-  }
-  else if(temp->type==conststring_e){
-    temp_expr->sym->name=temp->value.stringValue;
-  }
-  else if(temp->type==constbool_e){
-    if(temp->value.boolean==0){
-      temp_expr->sym->name="_false";
-    }
-    else if(temp->value.boolean==1){
-      temp_expr->sym->name="_true";
-    }
-  }
-  else if(temp->type==nil_e){
-    temp_expr->sym->name="_false";
-  }
-  temp_expr->value.intValue=label-1;
-  return temp_expr;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-
+///////////////////////////////////////////////////////
 void insert_tf_list(expr* dest,int list,int label){
   struct tf_node *temp;
   struct tf_node *prev;
@@ -434,7 +394,7 @@ void insert_tf_list(expr* dest,int list,int label){
   return;
 }
 
-//////////////////////////////////////////
+///////////////////////////////////////////////////////
 void merge_tf_list(expr* left,expr* right,expr* dest,int list){
   tf_node* temp_left;
   tf_node* temp_right;
@@ -458,7 +418,7 @@ void merge_tf_list(expr* left,expr* right,expr* dest,int list){
   }
 }
 
-//////////////////////////////////////////
+///////////////////////////////////////////////////////
 void backpatch(expr* patched,int patcher,int list_to_patch){
   tf_node* temp;
   struct quad* temp_quad=quads;
@@ -474,7 +434,8 @@ void backpatch(expr* patched,int patcher,int list_to_patch){
     temp=temp->next;
   }
 }
-////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
 void insert_jump_list(int label){
 
   struct jump_after_true *new_entry;
@@ -495,8 +456,8 @@ void insert_jump_list(int label){
     jump_head=new_entry;
   }
 }
-////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////
 void backpatch_jat(int label){
   struct jump_after_true *ptr;
   ptr=jump_head;
@@ -505,7 +466,9 @@ void backpatch_jat(int label){
   while (ptr!=NULL) {
     int i=0;
     for(i;i<currQuad;i++){
+
       if(i==ptr->label){
+
         (quads+i)->label=label;
         break;
       }
@@ -515,22 +478,18 @@ void backpatch_jat(int label){
 }
 
 ///////////////////////////////////////////////////////
-
 void backpatch_rat(int cur,int label){
     (quads+cur-1)->label=label+2;
 }
 
-//////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////
 void backpatch_jaf(int cur,int lab){
   (quads+cur)->label=lab;
 }
 
 ///////////////////////////////////////////////////////
 void backpatch_else(int cur,int label){
-
   (quads+cur)->label=label;
-
 }
 
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////

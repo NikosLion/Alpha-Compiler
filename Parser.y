@@ -130,57 +130,6 @@ stmt:	expr SEMICOLON  {
         }
       }
 
-    | ifprefix  {
-        fprintf(GOUT,"stmt: ifprefix\n");
-        struct expr *temp_true;
-        temp_true=(struct expr*)malloc(sizeof(struct expr));
-        temp_true->type=constbool_e;
-        temp_true->value.boolean=1;
-        temp_true->int_real=-2;
-
-        struct expr *temp_false;
-        temp_false=(struct expr*)malloc(sizeof(struct expr));
-        temp_false->type=constbool_e;
-        temp_false->value.boolean=0;
-        temp_false->int_real=-2;
-
-        struct expr *temp;
-        temp=(struct expr*)malloc(sizeof(struct expr));
-        struct SymbolTableEntry *sym;
-        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        temp->sym=sym;
-        temp->sym->offset=currScopeOffset();
-        temp->sym->space=currScopeSpace();
-        temp->sym->name=temp_name();
-        temp->type=var_e;
-        incCurrScopeOffset();
-
-        if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
-        }
-        else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
-        }
-
-        emit(jump,NULL,NULL,NULL,0,yylineno);
-        emit(assign,temp_true,NULL,temp,0,yylineno);
-
-        backpatch($1,currQuad-1,1);
-
-        emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
-        emit(assign,temp_false,NULL,temp,0,yylineno);
-
-        backpatch($1,currQuad-1,0);
-
-        emit(if_eq,temp,temp_true,NULL,0,yylineno);
-
-        backpatch_rat(currQuad,$1->true_list->label);
-        backpatch_jat(currQuad);
-
-        lab=$1->true_list->label;
-        $$=$1;
-      }
-
     | ifstmt  {
         fprintf(GOUT,"stmt: ifstmt\n");
 
@@ -1418,13 +1367,14 @@ ifprefix:	IF L_PARENTHESIS expr R_PARENTHESIS stmt {
             insert_jump_list(currQuad-1);
             $3->value.intValue=jump_head->label;
             $$=$3;
+              printf("iNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\n");
           }
 	    ;
 
 ifstmt: 	ifprefix ELSE stmt {
             fprintf(GOUT,"ifstmt: if ( expr ) stmt else stmt\n");
             insert_jump_list(currQuad);
-            else_flag=1;
+            $$=$1;
           }
       ;
 
