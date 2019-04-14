@@ -18,7 +18,6 @@ int lvalue_flag=0;
 int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
-int else_flag=0;
 int lab=0;
 
 
@@ -71,15 +70,10 @@ void yyerror(const char *s);
 
 program:	program stmt {
             fprintf(GOUT,"program: program stmt\n");
-
           }
 
 	     |   {
               fprintf(GOUT,"program: \n");
-              if(else_flag==1){
-                jump_head=NULL;
-                else_flag=0;
-              }
             }
 	     ;
 
