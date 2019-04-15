@@ -533,3 +533,44 @@ void backpatch_break(int label){
   }
   break_head=NULL;
 }
+
+///////////////////////////////////////////////////////
+void insert_continue_list(int label){
+  struct tf_node *new_entry;
+  new_entry=(struct tf_node*)malloc(sizeof(struct tf_node));
+
+  if(new_entry==NULL){
+    printf("ERROR: OUT_OF_MEMORY\n");
+    return;
+  }
+
+  new_entry->label=label;
+
+  if(continue_head==NULL){
+    continue_head=new_entry;
+  }
+  else{
+    new_entry->next=continue_head;
+    continue_head=new_entry;
+  }
+}
+
+///////////////////////////////////////////////////////
+void backpatch_continue(int label){
+
+  struct tf_node *ptr;
+  ptr=continue_head;
+
+  if(ptr==NULL){return;}
+  while (ptr!=NULL) {
+    int i=0;
+    for(i;i<currQuad;i++){
+      if(i==ptr->label){
+        (quads+i)->label=label;
+        break;
+      }
+    }
+    ptr=ptr->next;
+  }
+  continue_head=NULL;
+}

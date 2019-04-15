@@ -18,7 +18,6 @@ int lvalue_flag=0;
 int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
-int else_flag=0;
 int lab=0;
 
 
@@ -71,20 +70,16 @@ void yyerror(const char *s);
 
 program:	program stmt {
             fprintf(GOUT,"program: program stmt\n");
-
           }
 
 	     |   {
               fprintf(GOUT,"program: \n");
-              if(else_flag==1){
-                jump_head=NULL;
-                else_flag=0;
-              }
             }
 	     ;
 
 stmt:	expr SEMICOLON  {
         fprintf(GOUT,"stmt: expr ;\n");
+
 
         struct expr *temp;
         temp=(struct expr*)malloc(sizeof(struct expr));
@@ -286,6 +281,9 @@ stmt:	expr SEMICOLON  {
         if(break_head!=NULL){
           backpatch_break(currQuad);
         }
+        if(continue_head!=NULL){
+          backpatch_continue($1->true_list->label);
+        }
 
         $$=$1;
       }
@@ -338,6 +336,9 @@ stmt:	expr SEMICOLON  {
         if(break_head!=NULL){
           backpatch_break(currQuad);
         }
+        if(continue_head!=NULL){
+          backpatch_continue($1->true_list->label);
+        }
 
         $$=$1;
       }
@@ -352,8 +353,6 @@ stmt:	expr SEMICOLON  {
         }
         insert_break_list(currQuad);
         emit(jump,NULL,NULL,NULL,0,yylineno);
-
-
 	    }
     | CONTINUE SEMICOLON  {
     		fprintf(GOUT,"statement: continue ;\n");
@@ -361,6 +360,7 @@ stmt:	expr SEMICOLON  {
     			fprintf(GOUT,"Error at line %d: Continue statement not inside a loop.\n", yylineno);
           exit(0);
     		}
+        insert_continue_list(currQuad);
         emit(jump,NULL,NULL,NULL,0,yylineno);
     	}
     | block {fprintf(GOUT,"stmt: block\n");}
