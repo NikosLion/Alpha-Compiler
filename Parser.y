@@ -19,6 +19,7 @@ int const_flag=0;
 int func_flag=0;
 int call_args_counter=0;
 int lab=0;
+int elist_counter=0;
 
 
 
@@ -46,10 +47,9 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt whilestmt forstmt elist member
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt whilestmt forstmt elist member objectdef
 %type<argument_t> idlist
 %type<stringValue>   returnstmt block
-%type<stringValue>   objectdef
 %type<stringValue>  normcall methodcall callsuffix indexed indexedelem
 
 %right		  ASSIGN
@@ -80,40 +80,39 @@ program:	program stmt {
 stmt:	expr SEMICOLON  {
         fprintf(GOUT,"stmt: expr ;\n");
 
-
         struct expr *temp;
         temp=(struct expr*)malloc(sizeof(struct expr));
-
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         temp->sym=sym;
-
         temp->sym->offset=currScopeOffset();
         temp->sym->space=currScopeSpace();
         temp->sym->name=temp_name();
         temp->type=var_e;
-        incCurrScopeOffset();
 
-        if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        if($1->type!=newtable_e){
+          incCurrScopeOffset();
+          if(scope==0){
+            insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+          }
+          else{
+            insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+          }
         }
-        else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
-        }
-
-        struct expr *temp_true;
-        temp_true=(struct expr*)malloc(sizeof(struct expr));
-        temp_true->type=constbool_e;
-        temp_true->value.boolean=1;
-        temp_true->int_real=-2;
-
-        struct expr *temp_false;
-        temp_false=(struct expr*)malloc(sizeof(struct expr));
-        temp_false->type=constbool_e;
-        temp_false->value.boolean=0;
-        temp_false->int_real=-2;
 
         if($1->type==boolexpr_e){
+          struct expr *temp_true;
+          temp_true=(struct expr*)malloc(sizeof(struct expr));
+          temp_true->type=constbool_e;
+          temp_true->value.boolean=1;
+          temp_true->int_real=-2;
+
+          struct expr *temp_false;
+          temp_false=(struct expr*)malloc(sizeof(struct expr));
+          temp_false->type=constbool_e;
+          temp_false->value.boolean=0;
+          temp_false->int_real=-2;
+
           emit(assign,temp_true,NULL,temp,0,yylineno);
 
           backpatch($1,currQuad-1,1);
@@ -815,7 +814,10 @@ primary:	lvalue{
 	   |	  call {
             fprintf(GOUT,"primary: call\n");
           }
-	   |	  objectdef {fprintf(GOUT,"primary: objectdef\n");}
+	   |	  objectdef {
+            fprintf(GOUT,"primary: objectdef\n");
+            elist_counter=0;
+          }
 
 	   |	  L_PARENTHESIS funcdef R_PARENTHESIS {
             fprintf(GOUT,"primary: ( funcdef )\n");
@@ -1139,6 +1141,12 @@ call:		lvalue callsuffix {
     |		L_PARENTHESIS funcdef R_PARENTHESIS L_PARENTHESIS elist R_PARENTHESIS	{
           fprintf(GOUT,"call: ( funcdef ) ( elist )\n");
           call_args_counter=0;
+
+          while($5!=NULL){
+            emit(param,$5,NULL,NULL,0,yylineno);
+            $5=$5->next;
+          }
+
           emit(call,NULL,NULL,$2,0,yylineno);
 
           struct expr *new_ret;
@@ -1156,6 +1164,12 @@ call:		lvalue callsuffix {
     | 	call L_PARENTHESIS elist R_PARENTHESIS {
           fprintf(GOUT,"call: ( elist )\n");
           call_args_counter=0;
+
+          while($3!=NULL){
+            emit(param,$3,NULL,NULL,0,yylineno);
+            $3=$3->next;
+          }
+
           emit(call,NULL,NULL,$1,0,yylineno);
 
           struct expr *new_ret;
@@ -1175,10 +1189,24 @@ callsuffix:	normcall  {fprintf(GOUT,"callsuffix: normcall\n");}
     	  |	methodcall {fprintf(GOUT,"callsuffix: methodcall\n");}
     	  ;
 
-normcall:	L_PARENTHESIS elist R_PARENTHESIS	{fprintf(GOUT,"normcall: ( elist )\n");}
+normcall:	L_PARENTHESIS elist R_PARENTHESIS	{
+            fprintf(GOUT,"normcall: ( elist )\n");
+
+            while($2!=NULL){
+              emit(param,$2,NULL,NULL,0,yylineno);
+              $2=$2->next;
+            }
+          }
     	   ;
 
-methodcall:	DOUBLE_DOT IDENTIFIER L_PARENTHESIS elist R_PARENTHESIS {fprintf(GOUT,"methodcall: ..IDENTIFIER ( elist )\n");}
+methodcall:	DOUBLE_DOT IDENTIFIER L_PARENTHESIS elist R_PARENTHESIS {
+            fprintf(GOUT,"methodcall: ..IDENTIFIER ( elist )\n");
+
+            while($4!=NULL){
+              emit(param,$4,NULL,NULL,0,yylineno);
+              $4=$4->next;
+            }
+          }
     	   ;
 
 elist:		expr {
@@ -1217,7 +1245,7 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
-            emit(param,new_param,NULL,NULL,0,yylineno);
+
             $$=$1;
           }
 
@@ -1256,14 +1284,56 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
-            emit(param,new_param,NULL,NULL,0,yylineno);
 
+            $$->next=$3;
           }
 
      |    {fprintf(GOUT,"elist: \n");}
      ;
 
-objectdef:	L_BRACKET elist R_BRACKET  {fprintf(GOUT,"objectdef: [ elist ]\n");}
+objectdef:	L_BRACKET elist R_BRACKET  {
+              fprintf(GOUT,"objectdef: [ elist ]\n");
+
+              struct expr *temp;
+              temp=(struct expr*)malloc(sizeof(struct expr));
+              struct SymbolTableEntry *sym;
+              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              temp->sym=sym;
+              temp->type=var_e;
+              temp->sym->name=temp_name();
+              incCurrScopeOffset();
+              if(scope==0){
+                insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+              }
+              else{
+                insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+              }
+
+              struct expr *new_object;
+              new_object=(struct expr*)malloc(sizeof(struct expr));
+              struct SymbolTableEntry *sym1;
+              sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              new_object->sym=sym1;
+              new_object->type=newtable_e;
+              new_object->sym->name=temp->sym->name;
+
+              emit(tablecreate,NULL,NULL,temp,0,yylineno);
+
+              while($2!=NULL){
+                struct expr *count_item;
+                count_item=(struct expr*)malloc(sizeof(struct expr));
+                count_item->type=constnum_e;
+                count_item->value.intValue=elist_counter;
+                count_item->int_real=1;
+
+                emit(tablesetelem,count_item,$2,temp,0,yylineno);
+                elist_counter++;
+                $2=$2->next;
+              }
+
+              $$=new_object;
+
+          }
     	 |	  L_BRACKET indexed R_BRACKET {fprintf(GOUT,"objectdef: [ indexed ]\n");}
     	 ;
 
