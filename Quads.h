@@ -40,12 +40,10 @@ typedef struct tf_node{
   struct tf_node* next;
 }tf_node;
 
-
 typedef struct jump_after_true{
   int label;
   struct jump_after_true* next;
 }jump_after_true;
-
 
 typedef struct expr{
   enum expr_t type;
@@ -63,7 +61,6 @@ typedef struct expr{
   struct expr* next;
 }expr;
 
-
 typedef struct quad{
   enum iopcode op;
   expr* result;
@@ -72,6 +69,9 @@ typedef struct quad{
   unsigned label;
   unsigned line;
 }quad;
+
+
+
 
 
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line);
@@ -91,6 +91,7 @@ void insert_break_list(int label);
 void insert_continue_list(int label);
 void backpatch_break(int label);
 void backpatch_continue(int label);
+
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

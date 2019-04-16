@@ -177,6 +177,9 @@ void print_quads(FILE* out){
       else if(temp->arg1->type==boolexpr_e){
         fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
       }
+      else if(temp->arg1->type==tableitem_e){
+        fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
+      }
       else{
         fprintf(out,"%s\t\t\t",temp->arg1->sym->name);
       }
@@ -209,6 +212,9 @@ void print_quads(FILE* out){
       }
       else if(temp->arg2->type==boolexpr_e){
         //fprintf(out,"%d\t\t\t",temp->);
+      }
+      else if(temp->arg2->type==tableitem_e){
+        fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
       }
       else{
         fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
@@ -574,3 +580,5 @@ void backpatch_continue(int label){
   }
   continue_head=NULL;
 }
+
+///////////////////////////////////////////////////////
