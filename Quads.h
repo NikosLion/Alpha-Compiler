@@ -61,17 +61,6 @@ typedef struct expr{
   struct expr* next;
 }expr;
 
-typedef struct queue_node{
-  expr *data;
-  struct queue_node *next;
-}queue_node;
-
-typedef struct table_queue{
-  queue_node *front;
-  queue_node* rear;
-  int count;
-}table_queue;
-
 typedef struct quad{
   enum iopcode op;
   expr* result;
@@ -80,6 +69,9 @@ typedef struct quad{
   unsigned label;
   unsigned line;
 }quad;
+
+
+
 
 
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line);
@@ -99,10 +91,7 @@ void insert_break_list(int label);
 void insert_continue_list(int label);
 void backpatch_break(int label);
 void backpatch_continue(int label);
-void init_queue();
-void enqueue_table_queue(expr* new_table_item);
-expr* dequeue_table_queue();
-int is_empty_queue();
+
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);

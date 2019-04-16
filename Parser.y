@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Quads.h"
+#include "Table_queue.h"
 #include "Offset_stack.h"
 #include "Function_stack.h"
 
@@ -787,18 +787,22 @@ assignexpr:	lvalue ASSIGN expr{
                 $1->type=$3->type;                  //isws na prepei na mpei e3w apo thn if
               }
 
-              struct expr *temp;
-              temp=(struct expr*)malloc(sizeof(struct expr));
-              struct SymbolTableEntry *sym;
-              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-              temp->sym=sym;
+              if($1->index==NULL){
 
-              temp->sym->name=temp_name();
-              temp->type=var_e;
+                struct expr *temp;
+                temp=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                temp->sym=sym;
+                temp->sym->name=temp_name();
+                temp->type=var_e;
 
-              emit(assign,$3,NULL,$1,0,yylineno);
-              emit(assign,$3,NULL,temp,0,yylineno);
-
+                emit(assign,$3,NULL,$1,0,yylineno);
+                emit(assign,$3,NULL,temp,0,yylineno);
+              }
+              else{
+                emit(tablesetelem,$3,NULL,$1,0,yylineno);
+              }
               $$=$1;
           }
 		  ;
@@ -924,6 +928,7 @@ lvalue:		IDENTIFIER {
 					  $$=temp_maloc;
     			}
     		}
+        reset_queue();
 	  }
 	  |  LOCAL IDENTIFIER  {
 
@@ -982,10 +987,13 @@ lvalue:		IDENTIFIER {
 
 				}
 			}
+      reset_queue();
 	  }
 
 	  |  DOUBLE_COLON IDENTIFIER {
 			fprintf(GOUT,"lvalue: ::IDENTIFIER\n");
+
+      reset_queue();
 
 			struct expr *temp_maloc;
 			temp_maloc=(struct expr*)malloc(sizeof(struct expr));
@@ -1026,8 +1034,12 @@ member:		lvalue DOT IDENTIFIER	{
 
           struct expr *temp;
           temp=(struct expr*)malloc(sizeof(struct expr));
+          struct expr *index;
+          index=(struct expr*)malloc(sizeof(struct expr));
           struct SymbolTableEntry *sym;
           sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+          temp->index=index;
           temp->sym=sym;
           temp->type=var_e;
           temp->sym->offset=currScopeOffset();
@@ -1048,17 +1060,57 @@ member:		lvalue DOT IDENTIFIER	{
           new_member->sym=sym1;
           new_member->type=tableitem_e;
           new_member->sym->name=$3;
+          temp->index=new_member;
 
-          if(is_empty_queue()){
+
+          if(is_empty_queue()==1){
             emit(tablegetelem,$1,new_member,temp,0,yylineno);
             enqueue_table_queue(temp);
-          }else{
+          }
+          else{
             emit(tablegetelem,dequeue_table_queue(),new_member,temp,0,yylineno);
           }
 
           $$=temp;
         }
-      |		lvalue L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: lvalue[expr]\n");}   //pinakas
+      |		lvalue L_BRACKET expr R_BRACKET  {         //pinakas
+            fprintf(GOUT,"member: lvalue[expr]\n");
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct expr *index;
+            index=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+            temp->index=index;
+            temp->sym=sym;
+            temp->type=var_e;
+            temp->sym->offset=currScopeOffset();
+            temp->sym->space=currScopeSpace();
+            temp->sym->name=temp_name();
+            incCurrScopeOffset();
+            if(scope==0){
+              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            }
+            else{
+              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+            }
+
+            struct expr *new_member;
+            new_member=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym1;
+            sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            new_member->sym=sym1;
+            new_member->type=tableitem_e;
+            new_member->sym->name=$3->sym->name;
+            temp->index=new_member;
+
+            emit(tablegetelem,$1,new_member,temp,0,yylineno);
+
+            $$=temp;
+
+
+          }
       |		call DOT IDENTIFIER  {fprintf(GOUT,"member: call.IDENTIFIER\n");}
       |		call L_BRACKET expr R_BRACKET  {fprintf(GOUT,"member: call[expr]\n");}       //pinakas
       ;

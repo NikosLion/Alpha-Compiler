@@ -11,7 +11,6 @@ quad* quads = (quad*) 0;
 
 struct expr *temp_expr;
 struct SymbolTableEntry *t_sym;
-struct table_queue *t_queue;
 
 ///////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
@@ -583,49 +582,3 @@ void backpatch_continue(int label){
 }
 
 ///////////////////////////////////////////////////////
-void init_queue(){
-  t_queue=malloc(sizeof(table_queue));
-  t_queue->count=0;
-  t_queue->front=NULL;
-  t_queue->rear=NULL;
-}
-///////////////////////////////////////////////////////
-void enqueue_table_queue(expr* new_table_item){
-  queue_node *new_entry;
-  new_entry=malloc(sizeof(queue_node));
-
-  if(new_entry==NULL){
-    printf("ERROR: Out of memory!\n");
-    exit(0);
-  }
-
-  new_entry->data=new_table_item;
-  new_entry->next=NULL;
-
-  if(!(t_queue->rear==NULL)){
-    t_queue->rear->next=new_entry;
-    t_queue->rear=new_entry;
-  }
-  else{
-    t_queue->front=t_queue->rear=new_entry;
-  }
-  t_queue->count++;
-}
-
-///////////////////////////////////////////////////////
-expr* dequeue_table_queue(){
-  queue_node *temp;
-  struct expr *data;
-  data=malloc(sizeof(struct expr));
-  data=t_queue->front->data;
-  temp=t_queue->front;
-  t_queue->front=t_queue->front->next;
-  (t_queue->count)--;
-  free(temp);
-  return data;
-}
-
-///////////////////////////////////////////////////////
-int is_empty_queue(){
-  return t_queue->count==0;
-}
