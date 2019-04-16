@@ -40,12 +40,10 @@ typedef struct tf_node{
   struct tf_node* next;
 }tf_node;
 
-
 typedef struct jump_after_true{
   int label;
   struct jump_after_true* next;
 }jump_after_true;
-
 
 typedef struct expr{
   enum expr_t type;
@@ -63,6 +61,16 @@ typedef struct expr{
   struct expr* next;
 }expr;
 
+typedef struct queue_node{
+  expr *data;
+  struct queue_node *next;
+}queue_node;
+
+typedef struct table_queue{
+  queue_node *front;
+  queue_node* rear;
+  int count;
+}table_queue;
 
 typedef struct quad{
   enum iopcode op;
@@ -91,6 +99,10 @@ void insert_break_list(int label);
 void insert_continue_list(int label);
 void backpatch_break(int label);
 void backpatch_continue(int label);
+void init_queue();
+void enqueue_table_queue(expr* new_table_item);
+expr* dequeue_table_queue();
+int is_empty_queue();
 
 enum scopespace_t currScopeSpace(void);
 unsigned currScopeOffset(void);
