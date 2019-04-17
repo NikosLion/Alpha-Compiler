@@ -47,10 +47,10 @@ void yyerror(const char *s);
 %token<stringValue> IDENTIFIER STRINGLITERAL
 
 
-%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt whilestmt forstmt elist member objectdef
+%type<exprNode> lvalue funcdef const assignexpr expr term primary stmt booleanop relativeop arithmeticop call ifprefix ifstmt whilestmt forstmt elist member objectdef indexed indexedelem
 %type<argument_t> idlist
 %type<stringValue>   returnstmt block
-%type<stringValue>  normcall methodcall callsuffix indexed indexedelem
+%type<stringValue>  normcall methodcall callsuffix
 
 %right		  ASSIGN
 %left     	OR
@@ -1320,6 +1320,7 @@ objectdef:	L_BRACKET elist R_BRACKET  {
               emit(tablecreate,NULL,NULL,temp,0,yylineno);
 
               while($2!=NULL){
+                //pseudo-expr pou pairnei apla to elist_counter gia na fainetai sto quad
                 struct expr *count_item;
                 count_item=(struct expr*)malloc(sizeof(struct expr));
                 count_item->type=constnum_e;
@@ -1334,11 +1335,53 @@ objectdef:	L_BRACKET elist R_BRACKET  {
               $$=new_object;
 
           }
-    	 |	  L_BRACKET indexed R_BRACKET {fprintf(GOUT,"objectdef: [ indexed ]\n");}
+    	 |	  L_BRACKET indexed R_BRACKET {
+              fprintf(GOUT,"objectdef: [ indexed ]\n");
+
+              struct expr *temp;
+              temp=(struct expr*)malloc(sizeof(struct expr));
+              struct SymbolTableEntry *sym;
+              sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              temp->sym=sym;
+              temp->type=var_e;
+              temp->sym->name=temp_name();
+              incCurrScopeOffset();
+              if(scope==0){
+                insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+              }
+              else{
+                insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+              }
+
+              struct expr *new_object;
+              new_object=(struct expr*)malloc(sizeof(struct expr));
+              struct SymbolTableEntry *sym1;
+              sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+              new_object->sym=sym1;
+              new_object->type=newtable_e;
+              new_object->sym->name=temp->sym->name;
+
+              emit(tablecreate,NULL,NULL,temp,0,yylineno);
+
+              while($2!=NULL){
+                emit(tablesetelem,$2,$2->index,temp,0,yylineno);
+                $2=$2->next;
+              }
+
+              $$=new_object;
+          }
     	 ;
 
-indexed:	indexedelem  {fprintf(GOUT,"indexedelem\n");}
-	   | 	indexed COMMA indexedelem  {fprintf(GOUT,"indexed: indexed , indexedelem\n");}
+indexed:	indexedelem  {
+              fprintf(GOUT,"indexedelem\n");
+              $$=$1;
+          }
+	   | 	indexed COMMA indexedelem  {
+              fprintf(GOUT,"indexed: indexed , indexedelem\n");
+              //isws mia while me ena temp_expr na proxwraei ta $1->next k na vazei to $3 sto telos.
+              $1->next=$3;
+              $$=$1;
+          }
 	   ;
 
 indexedelem:	L_CURLY expr COLON expr R_CURLY	{
@@ -1348,6 +1391,22 @@ indexedelem:	L_CURLY expr COLON expr R_CURLY	{
                     change_name($4->sym->name,$2->value.stringValue,scope);
                   }
                 }
+
+                struct expr *new_indexedelem;
+                new_indexedelem=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym;
+                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                new_indexedelem->sym=sym;
+                new_indexedelem=$2;
+
+                struct expr *new_index;
+                new_index=(struct expr*)malloc(sizeof(struct expr));
+                struct SymbolTableEntry *sym1;
+                sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                new_indexedelem->index=new_index;
+                new_indexedelem->index=$4;
+
+                $$=new_indexedelem;
               }
 		   ;
 
