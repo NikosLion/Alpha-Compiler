@@ -20,7 +20,8 @@ int func_flag=0;
 int call_args_counter=0;
 int lab=0;
 int elist_counter=0;
-
+struct expr* index_head;
+struct expr* elist_head;
 
 
 
@@ -79,48 +80,49 @@ program:	program stmt {
 
 stmt:	expr SEMICOLON  {
         fprintf(GOUT,"stmt: expr ;\n");
+        if($1!=NULL){
 
-        struct expr *temp;
-        temp=(struct expr*)malloc(sizeof(struct expr));
-        struct SymbolTableEntry *sym;
-        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-        temp->sym=sym;
-        temp->sym->offset=currScopeOffset();
-        temp->sym->space=currScopeSpace();
-        temp->sym->name=temp_name();
-        temp->type=var_e;
+          if($1->type==boolexpr_e){
 
-        if($1->type!=newtable_e){
-          incCurrScopeOffset();
-          if(scope==0){
-            insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            struct expr *temp_true;
+            temp_true=(struct expr*)malloc(sizeof(struct expr));
+            temp_true->type=constbool_e;
+            temp_true->value.boolean=1;
+            temp_true->int_real=-2;
+
+            struct expr *temp_false;
+            temp_false=(struct expr*)malloc(sizeof(struct expr));
+            temp_false->type=constbool_e;
+            temp_false->value.boolean=0;
+            temp_false->int_real=-2;
+
+            struct expr *temp;
+            temp=(struct expr*)malloc(sizeof(struct expr));
+            struct SymbolTableEntry *sym;
+            sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+            temp->sym=sym;
+            temp->sym->offset=currScopeOffset();
+            temp->sym->space=currScopeSpace();
+            temp->sym->name=temp_name();
+            temp->type=var_e;
+
+            incCurrScopeOffset();
+            if(scope==0){
+              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            }
+            else{
+              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+            }
+
+            emit(assign,temp_true,NULL,temp,0,yylineno);
+
+            backpatch($1,currQuad-1,1);
+
+            emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+            emit(assign,temp_false,NULL,temp,0,yylineno);
+
+            backpatch($1,currQuad-1,0);
           }
-          else{
-            insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
-          }
-        }
-
-        if($1->type==boolexpr_e){
-          struct expr *temp_true;
-          temp_true=(struct expr*)malloc(sizeof(struct expr));
-          temp_true->type=constbool_e;
-          temp_true->value.boolean=1;
-          temp_true->int_real=-2;
-
-          struct expr *temp_false;
-          temp_false=(struct expr*)malloc(sizeof(struct expr));
-          temp_false->type=constbool_e;
-          temp_false->value.boolean=0;
-          temp_false->int_real=-2;
-
-          emit(assign,temp_true,NULL,temp,0,yylineno);
-
-          backpatch($1,currQuad-1,1);
-
-          emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
-          emit(assign,temp_false,NULL,temp,0,yylineno);
-
-          backpatch($1,currQuad-1,0);
         }
       }
 
@@ -674,6 +676,14 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         temp_const->type=var_e;
         temp_const->sym->name=temp_name();
 
+        incCurrScopeOffset();
+        if(scope==0){
+          insert_SymTable(temp_const->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp_const->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
+
         emit(uminus,$2,NULL,temp_const,0,yylineno);
         $$=temp_const;
       }
@@ -681,7 +691,19 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         fprintf(GOUT,"term: ! expr\n");
         struct expr *temp_not;
         temp_not=(struct expr*)malloc(sizeof(struct expr));
+        struct SymbolTableEntry *sym;
+        sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+        temp_not->sym=sym;
         temp_not->type=boolexpr_e;
+        temp_not->sym->name=temp_name();
+
+        incCurrScopeOffset();
+        if(scope==0){
+          insert_SymTable(temp_not->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+        }
+        else{
+          insert_SymTable(temp_not->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+        }
 
         struct expr *temp_true;
         temp_true=(struct expr*)malloc(sizeof(struct expr));
@@ -690,8 +712,8 @@ term:		L_PARENTHESIS expr R_PARENTHESIS 	{
         temp_true->int_real=-2;
 
         if(($2->type==var_e) || ($2->type!=boolexpr_e)){
-          emit(if_eq,$2,temp_true,NULL,0,yylineno);
-          emit(jump,NULL,NULL,NULL,0,yylineno);
+          emit(if_eq,$2,temp_true,NULL,-1,yylineno);
+          emit(jump,NULL,NULL,NULL,-1,yylineno);
           insert_tf_list(temp_not,1,currQuad-1);
           insert_tf_list(temp_not,0,currQuad-2);
         }
@@ -788,21 +810,93 @@ assignexpr:	lvalue ASSIGN expr{
 
               if($1->index==NULL){
 
-                struct expr *temp;
-                temp=(struct expr*)malloc(sizeof(struct expr));
-                struct SymbolTableEntry *sym;
-                sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
-                temp->sym=sym;
-                temp->sym->name=temp_name();
-                temp->type=var_e;
+                if($3->type==boolexpr_e){
 
-                emit(assign,$3,NULL,$1,0,yylineno);
-                emit(assign,$3,NULL,temp,0,yylineno);
+                  struct expr *temp_true;
+                  temp_true=(struct expr*)malloc(sizeof(struct expr));
+                  temp_true->type=constbool_e;
+                  temp_true->value.boolean=1;
+                  temp_true->int_real=-2;
+
+                  struct expr *temp_false;
+                  temp_false=(struct expr*)malloc(sizeof(struct expr));
+                  temp_false->type=constbool_e;
+                  temp_false->value.boolean=0;
+                  temp_false->int_real=-2;
+
+                  struct expr *temp;
+                  temp=(struct expr*)malloc(sizeof(struct expr));
+                  struct SymbolTableEntry *sym;
+                  sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                  temp->sym=sym;
+                  temp->sym->offset=currScopeOffset();
+                  temp->sym->space=currScopeSpace();
+                  temp->sym->name=temp_name();
+                  temp->type=var_e;
+
+                  incCurrScopeOffset();
+
+                  if(scope==0){
+                    insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  }
+                  else{
+                    insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  }
+
+                  emit(assign,temp_true,NULL,temp,0,yylineno);
+
+                  backpatch($3,currQuad-1,1);
+
+                  emit(jump,NULL,NULL,NULL,currQuad+2,yylineno);
+                  emit(assign,temp_false,NULL,temp,0,yylineno);
+
+                  backpatch($3,currQuad-1,0);
+
+                  emit(assign,temp,NULL,$1,0,yylineno);
+
+
+                  struct expr *temp2;
+                  temp2=(struct expr*)malloc(sizeof(struct expr));
+                  struct SymbolTableEntry *sym2;
+                  sym2=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                  temp2->sym=sym2;
+                  temp2->sym->offset=currScopeOffset();
+                  temp2->sym->space=currScopeSpace();
+                  temp2->sym->name=temp_name();
+                  temp2->type=var_e;
+
+                  emit(assign,$1,NULL,temp2,0,yylineno);
+                  $$=temp2;
+                }
+                else{
+                  struct expr *temp;
+                  temp=(struct expr*)malloc(sizeof(struct expr));
+                  struct SymbolTableEntry *sym;
+                  sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                  temp->sym=sym;
+                  temp->sym->name=temp_name();
+                  temp->type=var_e;
+
+                  incCurrScopeOffset();
+                  if(scope==0){
+                    insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  }
+                  else{
+                    insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  }
+
+                  emit(assign,$3,NULL,$1,0,yylineno);
+                  emit(assign,$1,NULL,temp,0,yylineno);
+
+                  $$=temp;
+                }
               }
               else{
                 emit(tablesetelem,$3,NULL,$1,0,yylineno);
+                $$=$1;
               }
-              $$=$1;
+
+
           }
 		  ;
 
@@ -817,6 +911,8 @@ primary:	lvalue{
 	   |	  objectdef {
             fprintf(GOUT,"primary: objectdef\n");
             elist_counter=0;
+            index_head=NULL;
+            elist_head=NULL;
           }
 
 	   |	  L_PARENTHESIS funcdef R_PARENTHESIS {
@@ -1104,13 +1200,24 @@ member:		lvalue DOT IDENTIFIER	{
             sym1=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
             new_member->sym=sym1;
             new_member->type=tableitem_e;
-            new_member->sym->name=$3->sym->name;
+
+            if($3->type==constnum_e){
+              if($3->int_real==1){
+                char sfasi[20];
+                sprintf(sfasi,"%d",$3->value.intValue);
+                new_member->sym->name=(char *)malloc(sizeof(strlen(sfasi)+1));
+                strcpy( new_member->sym->name,sfasi);
+              }
+            }
+            else{
+                new_member->sym->name=$3->sym->name;
+            }
+
             temp->index=new_member;
 
             emit(tablegetelem,$1,new_member,temp,0,yylineno);
 
             $$=temp;
-
 
           }
       |		call DOT IDENTIFIER  {fprintf(GOUT,"member: call.IDENTIFIER\n");}
@@ -1191,7 +1298,6 @@ callsuffix:	normcall  {fprintf(GOUT,"callsuffix: normcall\n");}
 
 normcall:	L_PARENTHESIS elist R_PARENTHESIS	{
             fprintf(GOUT,"normcall: ( elist )\n");
-
             while($2!=NULL){
               emit(param,$2,NULL,NULL,0,yylineno);
               $2=$2->next;
@@ -1245,8 +1351,8 @@ elist:		expr {
                 new_param->int_real=-2;
               }
             }
-
-            $$=$1;
+            elist_head=new_param;
+            $$=elist_head;
           }
 
      |		elist COMMA expr{
@@ -1285,7 +1391,13 @@ elist:		expr {
               }
             }
 
-            $$->next=$3;
+            struct expr* elist_ptr2;
+            elist_ptr2=elist_head;
+            while(elist_ptr2->next!=NULL){
+              elist_ptr2=elist_ptr2->next;
+            }
+            elist_ptr2->next=new_param;
+            $$=elist_head;
           }
 
      |    {fprintf(GOUT,"elist: \n");}
@@ -1302,6 +1414,7 @@ objectdef:	L_BRACKET elist R_BRACKET  {
               temp->type=var_e;
               temp->sym->name=temp_name();
               incCurrScopeOffset();
+
               if(scope==0){
                 insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
               }
@@ -1319,7 +1432,10 @@ objectdef:	L_BRACKET elist R_BRACKET  {
 
               emit(tablecreate,NULL,NULL,temp,0,yylineno);
 
-              while($2!=NULL){
+              struct expr* elist_ptr2;
+              elist_ptr2=elist_head;
+
+              while(elist_ptr2!=NULL){
                 //pseudo-expr pou pairnei apla to elist_counter gia na fainetai sto quad
                 struct expr *count_item;
                 count_item=(struct expr*)malloc(sizeof(struct expr));
@@ -1327,12 +1443,13 @@ objectdef:	L_BRACKET elist R_BRACKET  {
                 count_item->value.intValue=elist_counter;
                 count_item->int_real=1;
 
-                emit(tablesetelem,count_item,$2,temp,0,yylineno);
+                emit(tablesetelem,count_item,elist_ptr2,temp,0,yylineno);
                 elist_counter++;
-                $2=$2->next;
+                count_item->value.intValue=elist_counter;
+                elist_ptr2=elist_ptr2->next;
               }
 
-              $$=new_object;
+              $$=elist_head;
 
           }
     	 |	  L_BRACKET indexed R_BRACKET {
@@ -1346,6 +1463,7 @@ objectdef:	L_BRACKET elist R_BRACKET  {
               temp->type=var_e;
               temp->sym->name=temp_name();
               incCurrScopeOffset();
+
               if(scope==0){
                 insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
               }
@@ -1363,9 +1481,12 @@ objectdef:	L_BRACKET elist R_BRACKET  {
 
               emit(tablecreate,NULL,NULL,temp,0,yylineno);
 
-              while($2!=NULL){
-                emit(tablesetelem,$2,$2->index,temp,0,yylineno);
-                $2=$2->next;
+              struct expr* index_ptr2;
+              index_ptr2=index_head;
+
+              while(index_ptr2!=NULL){
+                emit(tablesetelem,index_ptr2,index_ptr2->index,temp,0,yylineno);
+                index_ptr2=index_ptr2->next;
               }
 
               $$=new_object;
@@ -1374,13 +1495,18 @@ objectdef:	L_BRACKET elist R_BRACKET  {
 
 indexed:	indexedelem  {
               fprintf(GOUT,"indexedelem\n");
+              index_head=$1;
               $$=$1;
           }
 	   | 	indexed COMMA indexedelem  {
               fprintf(GOUT,"indexed: indexed , indexedelem\n");
-              //isws mia while me ena temp_expr na proxwraei ta $1->next k na vazei to $3 sto telos.
-              $1->next=$3;
-              $$=$1;
+              struct expr* index_ptr;
+              index_ptr=index_head;
+              while(index_ptr->next!=NULL){
+                index_ptr=index_ptr->next;
+              }
+              index_ptr->next=$3;
+              $$=index_head;
           }
 	   ;
 
@@ -1751,7 +1877,7 @@ void yyerror(const char *s){
 
 int main(int argc, char **argv){
 
-  //init_symTable();
+  init_symTable();
   programVarOffset=0;
   functionLocalOffset=0;
   formalArgOffset=0;

@@ -18,6 +18,7 @@ unsigned functionLocalOffset;
 unsigned formalArgOffset;
 unsigned scopeSpaceCounter;
 
+///////////////////////////////////////////////////////
 enum iopcode{
   assign,       and,          if_less,      funcstart,
   add,          or,           if_greater,   funcend,
@@ -28,6 +29,7 @@ enum iopcode{
   if_greatereq, getretval
 };
 
+///////////////////////////////////////////////////////
 enum expr_t{
   var_e,            arithexpr_e,    constnum_e,
   tableitem_e,      boolexpr_e,     constbool_e,
@@ -35,16 +37,19 @@ enum expr_t{
   libraryfunc_e,    newtable_e,     nil_e
 };
 
+///////////////////////////////////////////////////////
 typedef struct tf_node{
   int label;
   struct tf_node* next;
 }tf_node;
 
+///////////////////////////////////////////////////////
 typedef struct jump_after_true{
   int label;
   struct jump_after_true* next;
 }jump_after_true;
 
+///////////////////////////////////////////////////////
 typedef struct expr{
   enum expr_t type;
   SymbolTableEntry* sym;
@@ -61,6 +66,7 @@ typedef struct expr{
   struct expr* next;
 }expr;
 
+///////////////////////////////////////////////////////
 typedef struct quad{
   enum iopcode op;
   expr* result;
@@ -70,10 +76,7 @@ typedef struct quad{
   unsigned line;
 }quad;
 
-
-
-
-
+///////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line);
 void expand(void);
 void print_quads(FILE* out);
