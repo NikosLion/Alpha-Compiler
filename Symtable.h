@@ -1,4 +1,8 @@
 #include <stdio.h>
+FILE *GOUT;
+extern int yylineno;
+extern char *yytext;
+extern FILE *yyin;
 
 enum SymbolType{
     global=1 , local=2 , formal=3, userfunc=4 , libfunc=5
@@ -17,6 +21,7 @@ typedef struct SymbolTableEntry{
     enum SymbolType type;
     enum scopespace_t space;
     unsigned offset;
+    unsigned taddress;
     struct FuncArg *args;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
