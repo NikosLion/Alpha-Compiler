@@ -582,3 +582,6 @@ void backpatch_continue(int label){
 }
 
 ///////////////////////////////////////////////////////
+quad* getQuads(){
+  return quads;
+}

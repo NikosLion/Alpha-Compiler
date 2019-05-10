@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Table_queue.h"
+#include "Vm_args.h"
 #include "parser.h"
+
 
 int main(int argc, char **argv){
 
@@ -40,6 +41,7 @@ int main(int argc, char **argv){
 
   print_symTable(GOUT);
   print_quads(GOUT);
+  icode_generator();
 
   fclose(yyin);
 

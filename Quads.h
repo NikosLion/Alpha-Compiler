@@ -19,13 +19,30 @@ unsigned formalArgOffset;
 unsigned scopeSpaceCounter;
 
 enum iopcode{
-  assign,       and,          if_less,      funcstart,
-  add,          or,           if_greater,   funcend,
-  sub,          not,          jump,         tablecreate,
-  mul,          if_eq,        call,         tablegetelem,
-  Div,          if_noteq,     param,        tablesetelem,
-  mod,          if_lesseq,    Return,       uminus,
-  if_greatereq, getretval
+  add=0,
+  sub=1,
+  mul=2,
+  Div=3,
+  mod=4,
+  tablecreate=5,
+  tablegetelem=6,
+  tablesetelem=7,
+  assign=8,
+  jump=9,
+  if_eq=10,
+  if_noteq=11,
+  if_greater=12,
+  if_greatereq=13,
+  if_less=14,
+  if_lesseq=15,
+  not=16,
+  param=17,
+  call=18,
+  uminus=19,
+  getretval=20,
+  funcstart=21,
+  Return=22,
+  funcend=23
 };
 
 enum expr_t{
@@ -99,3 +116,4 @@ void incCurrScopeOffset(void);
 void restoreCurScopeOffset(unsigned old_offset);
 void enterScopeSpace(void);
 void exitScopeSpace(void);
+quad* getQuads();

@@ -1,7 +1,7 @@
 all:
 	bison --yacc --defines --output=parser.c Parser.y
 	flex --outfile=scanner.c Scanner.l
-	gcc Symtable.h Symtable.c Quads.h Quads.c Offset_stack.h Offset_stack.c Function_stack.h Function_stack.c Table_queue.h Table_queue.c Vm_args.h Vm_args.c Main.c scanner.c parser.c --output=Parser
+	gcc Symtable.h Symtable.c Quads.h Quads.c Offset_stack.h Offset_stack.c Function_stack.h Function_stack.c Table_queue.h Table_queue.c Vm_args.h Vm_args.c Environment_func.c Main.c scanner.c parser.c --output=Parser
 
 clean:
 	rm parser.h

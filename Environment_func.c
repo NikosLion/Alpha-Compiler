@@ -1,0 +1,7 @@
+#include "Vm_args.h"
+
+///////////////////////////////////////////////////////
+void icode_generator(){
+  generate();
+  
+}
