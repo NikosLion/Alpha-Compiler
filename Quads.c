@@ -94,32 +94,30 @@ void restoreCurScopeOffset(unsigned old_offset){
 ///////////////////////////////////////////////////////
 char* return_op(int op){
   switch (op) {
-    case 0 : return "assign";
-    case 1 : return "and";
-    case 2 : return "if_less";
-    case 3 : return "funcstart";
-    case 4 : return "add";
-    case 5 : return "or";
-    case 6 : return "if_greater";
-    case 7 : return "funcend";
-    case 8 : return "sub";
-    case 9 : return "not";
-    case 10 : return "jump";
-    case 11 : return "tablecreate";
-    case 12 : return "mul";
+    case 0 : return "add";
+    case 1 : return "sub";
+    case 2 : return "mul";
+    case 3 : return "Div";
+    case 4 : return "mod";
+    case 5 : return "tablecreate";
+    case 6 : return "tablegetelem";
+    case 7 : return "tablesetelem";
+    case 8 : return "assign";
+    case 9 : return "jump";
+    case 10 : return "if_eq";
+    case 11 : return "if_noteq";
+    case 12 : return "if_greater";
     case 13 : return "if_eq";
-    case 14 : return "call";
-    case 15 : return "tablegetelem";
-    case 16 : return "Div";
-    case 17 : return "if_noteq";
-    case 18 : return "param";
-    case 19 : return "tablesetelem";
-    case 20 : return "mod";
-    case 21 : return "if_lesseq";
+    case 14 : return "if_less";
+    case 15 : return "if_lesseq";
+    case 16 : return "not";
+    case 17 : return "param";
+    case 18 : return "call";
+    case 19 : return "uminus";
+    case 20 : return "getretval";
+    case 21 : return "funcstart";
     case 22 : return "Return";
-    case 23 : return "uminus";
-    case 24 : return "if_geatereq";
-    case 25 : return "getretval";
+    case 23 : return "funcend";
     default :return "empty quad";
   }
 }
@@ -127,7 +125,7 @@ char* return_op(int op){
 ///////////////////////////////////////////////////////
 void print_quads(FILE* out){
   fprintf(out,"######################################################################################################################################\n\n");
-	fprintf(out,"Quad#\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
+	fprintf(out,"Quad #\t\tOpcode\t\t\tResult\t\t\tArg1\t\t\tArg2\t\t\tLabel\t\tLine\n");
   int i=0;
 	for(i;i<currQuad;i++){
     fprintf(out,"_____________________________________________________________________________________________________________________________________\n");

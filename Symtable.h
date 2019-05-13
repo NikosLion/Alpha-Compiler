@@ -21,7 +21,6 @@ typedef struct SymbolTableEntry{
     enum SymbolType type;
     enum scopespace_t space;
     unsigned offset;
-    unsigned taddress;
     struct FuncArg *args;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;

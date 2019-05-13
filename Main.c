@@ -41,7 +41,9 @@ int main(int argc, char **argv){
 
   print_symTable(GOUT);
   print_quads(GOUT);
-  icode_generator();
+  call_generators();
+  patch_incomplete_jumps();
+  print_instructions_table(GOUT);
 
   fclose(yyin);
 

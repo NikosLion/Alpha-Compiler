@@ -1,6 +1,16 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 #include "Table_queue.h"
 
 
+#define EXPAND_SIZE2 1024
+#define CURR_SIZE2 (total*sizeof(instruction))
+#define NEW_SIZE2 (EXPAND_SIZE2*sizeof(instruction)+CURR_SIZE2)
+
+unsigned total2;
+int currInstr;
+struct incomplete_jump* ij_head;
 
 enum vmopcode{
   assign_v,       add_v,          sub_v,
@@ -10,7 +20,8 @@ enum vmopcode{
   jle_v,          jge_v,          jlt_v,
   jgt_v,          call_v,         pusharg_v,
   funcenter_v,    funcexit_v,     newtable_v,
-  tablegetelem_v, tablesetelem_v, nop_v
+  tablegetelem_v, tablesetelem_v, nop_v,
+  jump_v
 };
 
 enum vmarg_t{
@@ -36,9 +47,9 @@ typedef struct vmarg{
 
 typedef struct instruction{
   enum vmopcode  opcode;
-  vmarg     result;
-  vmarg     arg1;
-  vmarg     arg2;
+  vmarg*     result;
+  vmarg*     arg1;
+  vmarg*     arg2;
   unsigned  srcLine;
 }instruction;
 
@@ -48,7 +59,14 @@ typedef struct userfunc{
   char*     id;
 }userFunc;
 
+typedef struct incomplete_jump{
+  unsigned instrNo; //the jump instruction number
+  unsigned iaddress;  //the i-code jump target address
+  struct incomplete_jump* next;
+}incomplete_jump;
+
 typedef void (*generator_func_t)(quad*);
+
 
 extern void generate_ADD(quad*);
 extern void generate_SUB(quad*);
@@ -80,7 +98,14 @@ unsigned consts_newstring(char* s);
 unsigned consts_newnumber(double n);
 unsigned libfuncs_newused(char* s);
 unsigned userfuncs_newfunc(SymbolTableEntry* sym);
-
+void expand2();
 void make_operand(expr* e, vmarg* arg);
-void generate();
+void call_generators();
+void generate(enum vmopcode  opcode,quad* q);
 void icode_generator();
+void emit_ins(instruction* t);
+void print_instructions_table();
+void generate_relational (enum vmopcode opcode, quad* q);
+void add_incomplete_jump(unsigned instrNo,unsigned iaddress);
+void patch_incomplete_jumps();
+char* return_instraction_op(int op);
