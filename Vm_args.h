@@ -11,6 +11,7 @@
 unsigned total2;
 int currInstr;
 struct incomplete_jump* ij_head;
+struct func_stack_entry* f_stack;
 
 enum vmopcode{
   assign_v,       add_v,          sub_v,
@@ -65,6 +66,11 @@ typedef struct incomplete_jump{
   struct incomplete_jump* next;
 }incomplete_jump;
 
+typedef struct func_stack_entry{
+  SymbolTableEntry* function;
+  struct func_stack_entry* next;
+}func_stack_entry;
+
 typedef void (*generator_func_t)(quad*);
 
 
@@ -109,3 +115,11 @@ void generate_relational (enum vmopcode opcode, quad* q);
 void add_incomplete_jump(unsigned instrNo,unsigned iaddress);
 void patch_incomplete_jumps();
 char* return_instraction_op(int op);
+void make_numberoperand(vmarg* arg,double val);
+void make_booloperand(vmarg* arg,unsigned val);
+void make_retvaloperand(vmarg* arg);
+void insert_ret_list(unsigned l,SymbolTableEntry* f);
+void backpatch_ret_list(unsigned l,SymbolTableEntry* f);
+void push_func(struct SymbolTableEntry* f);
+SymbolTableEntry* pop_func();
+SymbolTableEntry* top_func();

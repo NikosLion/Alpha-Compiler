@@ -12,6 +12,10 @@ enum scopespace_t{
   programvar, functionlocal, formalarg
 };
 
+typedef struct return_list{
+  unsigned label;
+  struct return_list* next;
+}return_list;
 
 typedef struct SymbolTableEntry{
     int isActive;
@@ -21,7 +25,9 @@ typedef struct SymbolTableEntry{
     enum SymbolType type;
     enum scopespace_t space;
     unsigned offset;
+    unsigned taddress;
     struct FuncArg *args;
+    struct return_list* ret_head;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
 }SymbolTableEntry;

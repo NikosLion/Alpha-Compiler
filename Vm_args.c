@@ -131,6 +131,23 @@ void make_operand(expr* e, vmarg* arg){
 }
 
 ///////////////////////////////////////////////////////
+void make_numberoperand(vmarg* arg,double val){
+  arg->val=consts_newnumber(val);
+  arg->type=number_a;
+}
+
+///////////////////////////////////////////////////////
+void make_booloperand(vmarg* arg,unsigned val){
+  arg->val=val;
+  arg->type=bool_a;
+}
+
+///////////////////////////////////////////////////////
+void make_retvaloperand(vmarg* arg){
+  arg->type=retval_a;
+}
+
+///////////////////////////////////////////////////////
 void generate(enum vmopcode opcode,quad* q){
 
   struct instruction *t;
@@ -200,6 +217,37 @@ void generate_relational (enum vmopcode opcode, quad* q) {
   t->srcLine=q->line;
   q->taddress = currInstr;
   emit_ins(t);
+}
+
+///////////////////////////////////////////////////////
+void insert_ret_list(unsigned l,SymbolTableEntry* f){
+  struct return_list *new_ret;
+  new_ret=(struct return_list*)malloc(sizeof(struct return_list));
+  if(new_ret==NULL){
+    printf("ERROR: OUT_OF_MEMORY\n");
+    return;
+  }
+  new_ret->label=l;
+
+  if(f->ret_head==NULL){
+    f->ret_head=new_ret;
+  }
+  else{
+    new_ret->next=f->ret_head;
+    f->ret_head=new_ret;
+  }
+}
+
+///////////////////////////////////////////////////////
+void backpatch_ret_list(unsigned l,SymbolTableEntry* f){
+  struct return_list *temp_ret;
+  temp_ret=(struct return_list*)malloc(sizeof(struct return_list));
+
+  temp_ret=f->ret_head;
+  while(temp_ret!=NULL){
+    ((instructions+temp_ret->label)->result)->val=l;
+    temp_ret=temp_ret->next;
+  }
 }
 
 ///////////////////////////////////////////////////////
@@ -353,14 +401,14 @@ extern void generate_PARAM(quad* temp){
 extern void generate_CALL(quad* temp){
   struct instruction *t;
   t=(struct instruction*)malloc(sizeof(struct instruction));
-  struct vmarg *arg1;
-  arg1=(struct vmarg*)malloc(sizeof(struct vmarg));
+  struct vmarg *result;
+  result=(struct vmarg*)malloc(sizeof(struct vmarg));
 
   temp->taddress = currInstr;
   t->opcode = call_v;
-  if(temp->arg1!=NULL){
-    make_operand(temp->arg1,arg1);
-    t->arg1=arg1;
+  if(temp->result!=NULL){
+    make_operand(temp->result,result);
+    t->arg1=result;
   }
   t->srcLine=temp->line;
   emit_ins(t);
@@ -411,7 +459,8 @@ extern void generate_GETRETVAL(quad* temp){
     t->result=result;
   }
 
-  //make_retvaloperand(&t.arg1);
+  make_retvaloperand(arg1);
+  t->arg1=arg1;
 
   t->srcLine=temp->line;
   emit_ins(t);
@@ -419,15 +468,79 @@ extern void generate_GETRETVAL(quad* temp){
 
 ///////////////////////////////////////////////////////
 extern void generate_FUNCSTART(quad* temp){
+  struct instruction *t;
+  t=(struct instruction*)malloc(sizeof(struct instruction));
+  struct vmarg *result;
+  result=(struct vmarg*)malloc(sizeof(struct vmarg));
+  struct SymbolTableEntry *f;
+  f=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
+  f=temp->result->sym;
+  f->taddress=currInstr;
+  temp->taddress=currInstr;
+
+  push_func(f);
+
+  t->opcode=funcenter_v;
+
+  if(temp->result!=NULL){
+    make_operand(temp->result,result);
+    t->result=result;
+  }
+  t->srcLine=temp->line;
+  emit_ins(t);
 }
+
 ///////////////////////////////////////////////////////
 extern void generate_RETURN(quad* temp){
+  struct instruction *t;
+  t=(struct instruction*)malloc(sizeof(struct instruction));
+  struct vmarg *arg1;
+  arg1=(struct vmarg*)malloc(sizeof(struct vmarg));
+  struct vmarg *result;
+  result=(struct vmarg*)malloc(sizeof(struct vmarg));
 
+  temp->taddress=currInstr;
+
+  t->opcode=assign_v;
+  make_retvaloperand(result);
+  t->result=result;
+  if(temp->arg1!=NULL){
+    make_operand(temp->arg1,arg1);
+    t->arg1=arg1;
+  }
+  t->srcLine=temp->line;
+  emit_ins(t);
+
+
+  insert_ret_list(currInstr,top_func());
+
+  t->opcode=jump_v;
+  t->arg1=NULL;
+  t->arg2=NULL;
+  t->result->type=label_a;
+  t->srcLine=temp->line;
+  emit_ins(t);
 }
+
 ///////////////////////////////////////////////////////
 extern void generate_FUNCEND(quad* temp){
+  struct instruction *t;
+  t=(struct instruction*)malloc(sizeof(struct instruction));
+  struct vmarg *result;
+  result=(struct vmarg*)malloc(sizeof(struct vmarg));
 
+  backpatch_ret_list(currInstr,pop_func());
+
+  temp->taddress=currInstr;
+  t->opcode=funcexit_v;
+
+  if(temp->result!=NULL){
+    make_operand(temp->result,result);
+    t->result=result;
+  }
+  t->srcLine=temp->line;
+  emit_ins(t);
 }
 
 ///////////////////////////////////////////////////////
@@ -470,13 +583,24 @@ void print_instructions_table(FILE* out){
   for (int i=0;i<currInstr;i++){
     int j=strlen(return_instraction_op((instructions+i)->opcode));
     fprintf(out,"_____________________________________________________________________________________________________________________________________\n");
+
     fprintf(out,"# %d\t\t\t%s",i,return_instraction_op((instructions+i)->opcode));
 
-    if(j<8){
-      fprintf(out,"\t\t\t%d",((instructions+i)->result)->val);
+    if((instructions+i)->result!=NULL){
+      if(j<8){
+        fprintf(out,"\t\t\t%d",((instructions+i)->result)->val);
+      }
+      else{
+        fprintf(out,"\t\t%d",((instructions+i)->result)->val);
+      }
     }
     else{
-      fprintf(out,"\t\t%d",((instructions+i)->result)->val);
+      if(j<8){
+        fprintf(out,"\t\t\t");
+      }
+      else{
+        fprintf(out,"\t\t");
+      }
     }
 
     if((instructions+i)->arg1!=NULL){
@@ -503,3 +627,48 @@ void print_instructions_table(FILE* out){
 }
 
 ///////////////////////////////////////////////////////
+void push_func(SymbolTableEntry* f){
+  struct func_stack_entry* new_entry;
+  new_entry=(struct func_stack_entry*)malloc(sizeof(struct func_stack_entry));
+
+  if(new_entry==NULL){
+    printf("OUT_OF_MEMORY\n");
+    exit(0);
+  }
+  new_entry->function=f;
+
+  if(f_stack==NULL){
+    f_stack=new_entry;
+  }
+  else{
+    new_entry->next=f_stack;
+    f_stack=new_entry;
+  }
+}
+
+///////////////////////////////////////////////////////
+SymbolTableEntry* pop_func(){
+  if(f_stack==NULL){
+    printf("Empty func_stack\n");
+    return NULL;
+  }
+  else{
+    struct SymbolTableEntry* temp;
+    temp=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+
+    temp=f_stack->function;
+    f_stack=f_stack->next;
+    return temp;
+  }
+}
+
+///////////////////////////////////////////////////////
+SymbolTableEntry* top_func(){
+  if(f_stack==NULL){
+    printf("Empty func_stack\n");
+    return NULL;
+  }
+  else{
+    return f_stack->function;
+  }
+}
