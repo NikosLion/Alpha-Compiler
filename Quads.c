@@ -583,3 +583,13 @@ void backpatch_continue(int label){
 quad* getQuads(){
   return quads;
 }
+
+///////////////////////////////////////////////////////
+void insert_funcstart_list(int label){
+
+}
+
+///////////////////////////////////////////////////////
+void backpatch_funcstart_list(int label){
+
+}

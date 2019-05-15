@@ -791,7 +791,12 @@ assignexpr:	lvalue ASSIGN expr{
                 temp->sym=sym;
                 temp->sym->name=temp_name();
                 temp->type=var_e;
-
+                if(scope==0){
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                }
+                else{
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                }
                 emit(assign,$3,NULL,$1,0,yylineno);
                 emit(assign,$3,NULL,temp,0,yylineno);
               }
@@ -1315,6 +1320,8 @@ funcdef:	FUNCTION IDENTIFIER {
          enterScopeSpace();
 
          f_push(new_func->sym->name,currQuad);
+         insert_funcstart_list(currQuad);
+         emit(jump,NULL,NULL,NULL,0,yylineno);
          emit(funcstart,NULL,NULL,new_func,0,yylineno);
 		   }
     } L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();} block {
@@ -1345,7 +1352,9 @@ funcdef:	FUNCTION IDENTIFIER {
         //Insert new function in SymbolTable
         insert_SymTable($2,scope,yylineno,4,currScopeOffset(),currScopeSpace());
 				inside_function--;
+
         emit(funcend,NULL,NULL,new_func,0,yylineno);
+        backpatch_funcstart_list(currQuad);
 
 		}
 		|	FUNCTION {
@@ -1366,6 +1375,9 @@ funcdef:	FUNCTION IDENTIFIER {
         enterScopeSpace();
 
         f_push(new_func->sym->name,currQuad);
+
+        insert_funcstart_list(currQuad);
+        emit(jump,NULL,NULL,NULL,0,yylineno);
         emit(funcstart,NULL,NULL,new_func,0,yylineno);
 
 		}	L_PARENTHESIS idlist R_PARENTHESIS {push(currScopeOffset()); enterScopeSpace();}block {
@@ -1396,6 +1408,7 @@ funcdef:	FUNCTION IDENTIFIER {
         insert_SymTable(new_func->sym->name,scope,yylineno,4,currScopeOffset(),currScopeSpace());
         inside_function--;
         emit(funcend,NULL,NULL,new_func,0,yylineno);
+        backpatch_funcstart_list(currQuad);
 	}
 	   ;
 

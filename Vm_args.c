@@ -1,10 +1,7 @@
 #include "Vm_args.h"
 #include <stdlib.h>
 
-unsigned consts_newstring(char* s){}
-unsigned consts_newnumber(double n){}
-unsigned libfuncs_newused(char* s){}
-unsigned userfuncs_newfunc(SymbolTableEntry* sym){}
+
 
 int quad_runner;
 
@@ -36,6 +33,108 @@ generator_func_t generators[]= {
 };
 
 instruction* instructions = (instruction*) 0;
+userFunc* user_funcs = (userFunc*) 0;
+strings* lib_funcs = (strings*) 0;
+strings* string_consts = (strings*)0;
+double* numbers =(double*) 0;
+
+
+///////////////////////////////////////////////////////
+unsigned consts_newstring(char* s){
+
+  if(curr_strings == total_strings){
+    expand_tables(2);
+  }
+  strings* new_string;
+  new_string=string_consts+curr_strings;
+  new_string->string=s;
+  curr_strings++;
+}
+
+///////////////////////////////////////////////////////
+unsigned consts_newnumber(double n){
+  if(curr_nums == total_nums){
+    expand_tables(3);
+  }
+  double* new_num;
+  new_num=numbers+curr_nums;
+  *new_num=n;
+  curr_nums++;
+}
+
+///////////////////////////////////////////////////////
+unsigned libfuncs_newused(char* s){
+
+  if(curr_lib_funcs == total_lib_funcs){
+    expand_tables(1);
+  }
+  strings* new_lib;
+  new_lib=lib_funcs+curr_lib_funcs;
+  new_lib->string=s;
+  curr_lib_funcs++;
+}
+
+///////////////////////////////////////////////////////
+unsigned userfuncs_newfunc(SymbolTableEntry* sym){
+
+  if(curr_funcs == total_funcs){
+    expand_tables(0);
+  }
+  struct userFunc *new_func;
+  new_func=user_funcs+curr_funcs;
+  new_func->address=sym->taddress;
+  new_func->id=sym->name;
+  //new_func->localSize=??
+  curr_funcs++;
+}
+
+///////////////////////////////////////////////////////
+void expand_tables(int i){
+  if(i==0){
+    assert(total_funcs == curr_funcs);
+    userFunc* funcs=(userFunc*)malloc(NEW_SIZE2);
+    if(user_funcs){
+      memcpy(funcs,user_funcs,CURR_SIZE2);
+      free(user_funcs);
+    }
+    user_funcs=funcs;
+    total_funcs=total_funcs+EXPAND_SIZE2;
+  }
+  else if(i==1){
+    assert(total_lib_funcs == curr_lib_funcs);
+    strings* libs=(strings*)malloc(NEW_SIZE2);
+    if(lib_funcs){
+      memcpy(libs,lib_funcs,CURR_SIZE2);
+      free(lib_funcs);
+    }
+    lib_funcs=libs;
+    total_lib_funcs=total_lib_funcs+EXPAND_SIZE2;
+  }
+  else if(i==2){
+    assert(total_strings == curr_strings);
+    strings* strings0=(strings*)malloc(NEW_SIZE2);
+    if(string_consts){
+      memcpy(strings0,string_consts,CURR_SIZE2);
+      free(string_consts);
+    }
+    string_consts=strings0;
+    total_strings=total_strings+EXPAND_SIZE2;
+  }
+  else if(i==3){
+    assert(total_nums == curr_nums);
+    double* nums=(double*)malloc(NEW_SIZE2);
+    if(numbers){
+      memcpy(nums,numbers,CURR_SIZE2);
+      free(numbers);
+    }
+    numbers=nums;
+    total_nums=total_nums+EXPAND_SIZE2;
+  }
+  else{
+    fprintf(GOUT,"give right input noob!!!\n");
+    assert(0);
+  }
+}
 
 ///////////////////////////////////////////////////////
 void expand2(){
@@ -122,8 +221,8 @@ void make_operand(expr* e, vmarg* arg){
       break;
     }
     case libraryfunc_e:{
-      //arg->type=libraryfunc_a;
-      //arg->val=libfuncs_newused(e->sym->name);
+      arg->type=libfunc_a;
+      arg->val=libfuncs_newused(e->sym->name);
       break;
     }
     default:exit(0);
@@ -479,6 +578,7 @@ extern void generate_FUNCSTART(quad* temp){
   f->taddress=currInstr;
   temp->taddress=currInstr;
 
+  userfuncs_newfunc(f);
   push_func(f);
 
   t->opcode=funcenter_v;

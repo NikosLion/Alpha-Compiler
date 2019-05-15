@@ -62,6 +62,11 @@ typedef struct jump_after_true{
   struct jump_after_true* next;
 }jump_after_true;
 
+typedef struct func_jump{
+  int label;
+  struct func_jump* next;
+}func_jump;
+
 typedef struct expr{
   enum expr_t type;
   SymbolTableEntry* sym;
@@ -109,6 +114,8 @@ void insert_break_list(int label);
 void insert_continue_list(int label);
 void backpatch_break(int label);
 void backpatch_continue(int label);
+void insert_funcstart_list(int label);
+void backpatch_funcstart_list(int label);
 
 
 enum scopespace_t currScopeSpace(void);

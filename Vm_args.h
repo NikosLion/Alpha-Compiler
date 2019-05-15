@@ -9,6 +9,14 @@
 #define NEW_SIZE2 (EXPAND_SIZE2*sizeof(instruction)+CURR_SIZE2)
 
 unsigned total2;
+unsigned total_funcs;
+unsigned total_lib_funcs;
+unsigned total_strings;
+unsigned total_nums;
+unsigned curr_funcs;
+unsigned curr_lib_funcs;
+unsigned curr_strings;
+unsigned curr_nums;
 int currInstr;
 struct incomplete_jump* ij_head;
 struct func_stack_entry* f_stack;
@@ -54,11 +62,15 @@ typedef struct instruction{
   unsigned  srcLine;
 }instruction;
 
-typedef struct userfunc{
+typedef struct userFunc{
   unsigned  address;
   unsigned  localSize;
   char*     id;
 }userFunc;
+
+typedef struct strings{
+  char* string;
+}strings;
 
 typedef struct incomplete_jump{
   unsigned instrNo; //the jump instruction number
@@ -123,3 +135,4 @@ void backpatch_ret_list(unsigned l,SymbolTableEntry* f);
 void push_func(struct SymbolTableEntry* f);
 SymbolTableEntry* pop_func();
 SymbolTableEntry* top_func();
+void expand_tables(int i);
