@@ -90,10 +90,10 @@ stmt:	expr SEMICOLON  {
         incCurrScopeOffset();
 
         if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
         }
         else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
         }
 
         struct expr *temp_true;
@@ -146,10 +146,10 @@ stmt:	expr SEMICOLON  {
        incCurrScopeOffset();
 
        if(scope==0){
-         insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+         insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
        }
        else{
-         insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+         insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
        }
 
        emit(jump,NULL,NULL,NULL,0,yylineno);
@@ -199,10 +199,10 @@ stmt:	expr SEMICOLON  {
         incCurrScopeOffset();
 
         if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
         }
         else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
         }
 
         emit(jump,NULL,NULL,NULL,0,yylineno);
@@ -255,10 +255,10 @@ stmt:	expr SEMICOLON  {
         incCurrScopeOffset();
 
         if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
         }
         else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
         }
 
         emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
@@ -310,10 +310,10 @@ stmt:	expr SEMICOLON  {
         incCurrScopeOffset();
 
         if(scope==0){
-          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
         }
         else{
-          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+          insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
         }
 
         emit(jump,NULL,NULL,NULL,$1->true_list->label,yylineno);
@@ -395,10 +395,10 @@ arithmeticop: expr PLUS expr  {
                 temp->type=var_e;
                 incCurrScopeOffset();
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(add,$1,$3,temp,0,yylineno);
                 $$=temp;
@@ -416,10 +416,10 @@ arithmeticop: expr PLUS expr  {
                 temp->type=var_e;
                 incCurrScopeOffset();
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(sub,$1,$3,temp,0,yylineno);
                 $$=temp;
@@ -437,10 +437,10 @@ arithmeticop: expr PLUS expr  {
                 temp->type=var_e;
                 incCurrScopeOffset();
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(mul,$1,$3,temp,0,yylineno);
                 $$=temp;
@@ -458,10 +458,10 @@ arithmeticop: expr PLUS expr  {
                 temp->type=var_e;
                 incCurrScopeOffset();
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(Div,$1,$3,temp,0,yylineno);
                 $$=temp;
@@ -479,10 +479,10 @@ arithmeticop: expr PLUS expr  {
                 temp->type=var_e;
                 incCurrScopeOffset();
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(mod,$1,$3,temp,0,yylineno);
                 $$=temp;
@@ -788,14 +788,17 @@ assignexpr:	lvalue ASSIGN expr{
                 temp=(struct expr*)malloc(sizeof(struct expr));
                 struct SymbolTableEntry *sym;
                 sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
+                incCurrScopeOffset();
                 temp->sym=sym;
                 temp->sym->name=temp_name();
                 temp->type=var_e;
+                temp->sym->offset=currScopeOffset();
+
                 if(scope==0){
-                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
                 }
                 else{
-                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+                  insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
                 }
                 emit(assign,$3,NULL,$1,0,yylineno);
                 emit(assign,$3,NULL,temp,0,yylineno);
@@ -913,7 +916,7 @@ lvalue:		IDENTIFIER {
             temp_maloc->sym->name=$1;
             temp_maloc->sym->type=1;
             temp_maloc->type=var_e;
-    				insert_SymTable($1,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+    				insert_SymTable($1,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
 					  $$=temp_maloc;
 
     			}
@@ -924,7 +927,7 @@ lvalue:		IDENTIFIER {
             temp_maloc->sym->name=$1;
 					  temp_maloc->sym->type=2;
             temp_maloc->type=var_e;
-    				insert_SymTable($1,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+    				insert_SymTable($1,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
 					  $$=temp_maloc;
     			}
     		}
@@ -972,18 +975,19 @@ lvalue:		IDENTIFIER {
           temp_maloc->sym->space=currScopeSpace();
 
           $$=temp_maloc;
-					insert_SymTable($2,0,yylineno,1,currScopeOffset(),currScopeSpace());
+					insert_SymTable($2,0,yylineno,1,currScopeOffset(),currScopeSpace(),0);
 
 				}
 				else{
 					temp_maloc->sym->name=$2;
 					temp_maloc->sym->type=2;
           temp_maloc->type=var_e;
+
           incCurrScopeOffset();
           temp_maloc->sym->offset=currScopeOffset();
           temp_maloc->sym->space=currScopeSpace();
 					$$=temp_maloc;
-					insert_SymTable($2,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+					insert_SymTable($2,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
 
 				}
 			}
@@ -1047,10 +1051,10 @@ member:		lvalue DOT IDENTIFIER	{
           temp->sym->name=temp_name();
           incCurrScopeOffset();
           if(scope==0){
-            insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+            insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
           }
           else{
-            insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+            insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
           }
 
           struct expr *new_member;
@@ -1090,10 +1094,10 @@ member:		lvalue DOT IDENTIFIER	{
             temp->sym->name=temp_name();
             incCurrScopeOffset();
             if(scope==0){
-              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace());
+              insert_SymTable(temp->sym->name,scope,yylineno,1,currScopeOffset(),currScopeSpace(),0);
             }
             else{
-              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace());
+              insert_SymTable(temp->sym->name,scope,yylineno,2,currScopeOffset(),currScopeSpace(),0);
             }
 
             struct expr *new_member;
@@ -1334,6 +1338,7 @@ funcdef:	FUNCTION IDENTIFIER {
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         new_func->sym=sym;
 
+        unsigned func_locs=currScopeOffset();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
         restoreCurScopeOffset(pop());
@@ -1350,7 +1355,7 @@ funcdef:	FUNCTION IDENTIFIER {
         $$=new_func;
 
         //Insert new function in SymbolTable
-        insert_SymTable($2,scope,yylineno,4,currScopeOffset(),currScopeSpace());
+        insert_SymTable($2,scope,yylineno,4,currScopeOffset(),currScopeSpace(),func_locs);
 				inside_function--;
 
         emit(funcend,NULL,NULL,new_func,0,yylineno);
@@ -1390,6 +1395,7 @@ funcdef:	FUNCTION IDENTIFIER {
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         new_func->sym=sym;
 
+        unsigned func_locs=currScopeOffset();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
         restoreCurScopeOffset(pop());
@@ -1405,7 +1411,7 @@ funcdef:	FUNCTION IDENTIFIER {
         $$=new_func;
 
         //Insert new function in SymbolTable
-        insert_SymTable(new_func->sym->name,scope,yylineno,4,currScopeOffset(),currScopeSpace());
+        insert_SymTable(new_func->sym->name,scope,yylineno,4,currScopeOffset(),currScopeSpace(),func_locs);
         inside_function--;
         emit(funcend,NULL,NULL,new_func,0,yylineno);
         backpatch_funcstart_list(currQuad);
@@ -1513,7 +1519,7 @@ idlist:		IDENTIFIER {
 				}
 				else{
           incCurrScopeOffset();
-					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
+					insert_SymTable($1,scope+1,yylineno,3,currScopeOffset(),currScopeSpace(),0);
 				}
 			}
       |		idlist COMMA IDENTIFIER	{
@@ -1532,7 +1538,7 @@ idlist:		IDENTIFIER {
 				}
 				else{
           incCurrScopeOffset();
-					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace());
+					insert_SymTable($3,scope+1,yylineno,3,currScopeOffset(),currScopeSpace(),0);
 				}
 			}
 

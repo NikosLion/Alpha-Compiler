@@ -11,6 +11,7 @@ quad* quads = (quad*) 0;
 
 struct expr *temp_expr;
 struct SymbolTableEntry *t_sym;
+struct func_jump* func_jump_head=NULL;
 
 ///////////////////////////////////////////////////////
 void emit(enum iopcode op,expr* arg1,expr* arg2,expr* result,int label,unsigned line){
@@ -586,10 +587,28 @@ quad* getQuads(){
 
 ///////////////////////////////////////////////////////
 void insert_funcstart_list(int label){
-
+  struct func_jump*  temp;
+  temp=(struct func_jump*)malloc(sizeof(struct func_jump));
+  assert(temp!=NULL);
+  if(func_jump_head==NULL){
+    func_jump_head=temp;
+    func_jump_head->label=label;
+  }
+  else{
+    temp->label=label;
+    temp->next=func_jump_head;
+    func_jump_head=temp;
+  }
 }
 
 ///////////////////////////////////////////////////////
 void backpatch_funcstart_list(int label){
-
+  struct func_jump*  temp;
+  temp=(struct func_jump*)malloc(sizeof(struct func_jump));
+  assert(temp!=NULL);
+  if(func_jump_head!=NULL){
+    temp=func_jump_head;
+    func_jump_head=temp->next;
+    (quads+(temp->label))->label=label;
+  }
 }

@@ -25,6 +25,7 @@ typedef struct SymbolTableEntry{
     enum SymbolType type;
     enum scopespace_t space;
     unsigned offset;
+    unsigned func_locals;
     unsigned taddress;
     struct FuncArg *args;
     struct return_list* ret_head;
@@ -53,7 +54,7 @@ char *temp_name_func();
 char *temp_name_return();
 
 int HideVar(int scope);
-void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space);
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space,unsigned func_locs);
 void print_symTable(FILE* out);
 void init_symTable();
 int lookup_symTable(char *name,int scope,int type);         //search_cond 0 for same scope lookup,1 for global lookup
