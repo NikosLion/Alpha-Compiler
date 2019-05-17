@@ -1288,11 +1288,13 @@ indexedelem:	L_CURLY expr COLON expr R_CURLY	{
 block:		L_CURLY {
             fprintf(GOUT,"block: { program }\n");
   					scope++;
+
 				  }
 
 				  program R_CURLY{
             HideVar(scope);
             scope--;
+
           }
      ;
 
@@ -1332,20 +1334,25 @@ funcdef:	FUNCTION IDENTIFIER {
 
 				fprintf(GOUT,"funcdef: function IDENTIFIER ( idlist ) block\n");
 
+        unsigned func_locs;
+        unsigned func_lel;
+
         struct expr *new_func;
         new_func=(struct expr*)malloc(sizeof(struct expr));
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         new_func->sym=sym;
 
-        unsigned func_locs=currScopeOffset();
+
+
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
-        restoreCurScopeOffset(pop());
+        func_lel=pop();
+        func_locs=currScopeOffset()-func_lel;
+        restoreCurScopeOffset(func_lel);
         exitScopeSpace();
         exitScopeSpace();
 
-        //new_func->sym->name=f_pop();
         Function_stack* temp_func=f_pop();
         new_func->sym->name=temp_func->name;
         new_func->value.intValue=temp_func->label;
@@ -1389,16 +1396,20 @@ funcdef:	FUNCTION IDENTIFIER {
 
 				fprintf(GOUT,"funcdef: function ( idlist )\n");
 
+        unsigned func_locs;
+        unsigned func_lel;
         struct expr *new_func;
+
         new_func=(struct expr*)malloc(sizeof(struct expr));
         struct SymbolTableEntry *sym;
         sym=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
         new_func->sym=sym;
 
-        unsigned func_locs=currScopeOffset();
         //mia pop() gia ta locals, mia gia ta idlist
         pop();
-        restoreCurScopeOffset(pop());
+        func_lel=pop();
+        func_locs=currScopeOffset()-func_lel;
+        restoreCurScopeOffset(func_lel);
         exitScopeSpace();
         exitScopeSpace();
 

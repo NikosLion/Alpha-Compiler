@@ -45,7 +45,7 @@ int main(int argc, char **argv){
   call_generators();
   patch_incomplete_jumps();
   print_instructions_table(GOUT);
-
+  convert_to_binary();
   fclose(yyin);
 
   if(GOUT!=stdout){

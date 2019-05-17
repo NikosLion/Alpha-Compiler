@@ -8,3 +8,4 @@ clean:
 	rm parser.c
 	rm scanner.c
 	rm Parser
+	rm output

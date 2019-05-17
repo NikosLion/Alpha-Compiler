@@ -19,9 +19,8 @@ unsigned pop(){
   }
   else{
     temp=stack_head;
-    stack_head=temp->next;
     ret=temp->offset;
-    free(temp);
+    stack_head=temp->next;
     return ret;
   }
 }
@@ -32,8 +31,8 @@ void push(unsigned offset){
   temp=(struct scopeSpace_stack*)malloc(sizeof(struct scopeSpace_stack));
   assert(temp!=NULL);
   if(stack_head==NULL){
+    temp->offset==offset;
     stack_head=temp;
-    stack_head->offset=offset;
   }
   else{
     temp->offset=offset;

@@ -84,7 +84,7 @@ unsigned userfuncs_newfunc(SymbolTableEntry* sym){
   new_func=user_funcs+curr_funcs;
   new_func->address=sym->taddress;
   new_func->id=sym->name;
-  //new_func->localSize=??
+  new_func->localSize=sym->func_locals;
   curr_funcs++;
 }
 
@@ -771,4 +771,34 @@ SymbolTableEntry* top_func(){
   else{
     return f_stack->function;
   }
+}
+
+///////////////////////////////////////////////////////
+FILE* convert_to_binary(){
+
+  FILE* file;
+  //FILE* file2;
+
+  file=fopen("output","wb");
+
+    if(file!=NULL){
+      struct instruction ins;
+      //ins=(struct instruction*)malloc(sizeof(struct instruction));
+      for (int i=0;i<currInstr;i++){
+        ins=*(instructions+i);
+        fwrite(&ins,sizeof(struct instruction),1,file);
+      }
+      fclose(file);
+
+      //file2=fopen("output","rb");
+
+
+    /*  while(fread(&ins,sizeof(struct instruction),1,file2)){                  READ BINARY !!!!!!!!!!!
+        fprintf(GOUT,"!!!!!  %d \n",ins.opcode);
+      } */
+    }
+
+
+
+
 }

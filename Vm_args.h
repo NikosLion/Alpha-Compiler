@@ -136,3 +136,4 @@ void push_func(struct SymbolTableEntry* f);
 SymbolTableEntry* pop_func();
 SymbolTableEntry* top_func();
 void expand_tables(int i);
+FILE* convert_to_binary();
