@@ -137,3 +137,4 @@ SymbolTableEntry* pop_func();
 SymbolTableEntry* top_func();
 void expand_tables(int i);
 FILE* convert_to_binary();
+void Read_froms_Binary();

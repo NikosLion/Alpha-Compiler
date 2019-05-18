@@ -7,7 +7,6 @@
 
 int main(int argc, char **argv){
 
-  //init_symTable();
   programVarOffset=0;
   functionLocalOffset=0;
   formalArgOffset=0;
@@ -36,16 +35,16 @@ int main(int argc, char **argv){
 	  GOUT = stdout;
   }
 
+  init_symTable();
   init_queue();
   yyparse();
-
   print_symTable(GOUT);
   print_quads(GOUT);
-
   call_generators();
   patch_incomplete_jumps();
   print_instructions_table(GOUT);
   convert_to_binary();
+  //Read_froms_Binary();
   fclose(yyin);
 
   if(GOUT!=stdout){

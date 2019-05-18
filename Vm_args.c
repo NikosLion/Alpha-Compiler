@@ -777,28 +777,99 @@ SymbolTableEntry* top_func(){
 FILE* convert_to_binary(){
 
   FILE* file;
-  //FILE* file2;
 
   file=fopen("output","wb");
 
     if(file!=NULL){
+
       struct instruction ins;
-      //ins=(struct instruction*)malloc(sizeof(struct instruction));
+      struct userFunc us;
+      struct strings lb;
+      struct strings st;
+      double n;
+
+      //instructions talbe
       for (int i=0;i<currInstr;i++){
         ins=*(instructions+i);
         fwrite(&ins,sizeof(struct instruction),1,file);
       }
+
+      //numbers
+      for (int j=0; j<curr_nums;j++){
+        n=*(numbers+j);
+        fwrite(&n,sizeof(double),1,file);
+      }
+
+      //lib_funcs
+      for (int j=0; j<curr_lib_funcs;j++){
+        lb=*(lib_funcs+j);
+        fwrite(&lb,sizeof(struct strings),1,file);
+      }
+
+      //user_funcs
+      for (int j=0; j<curr_funcs;j++){
+        us=*(user_funcs+j);
+        fwrite(&us,sizeof(struct userFunc),1,file);
+      }
+
+      //strings
+      for (int j=0; j<curr_strings;j++){
+        st=*(string_consts+j);
+        fwrite(&st,sizeof(struct strings),1,file);
+      }
+
       fclose(file);
-
-      //file2=fopen("output","rb");
-
-
-    /*  while(fread(&ins,sizeof(struct instruction),1,file2)){                  READ BINARY !!!!!!!!!!!
-        fprintf(GOUT,"!!!!!  %d \n",ins.opcode);
-      } */
     }
+  }
 
+///////////////////////////////////////////////////////
+//READ BINARY
+void Read_froms_Binary(){
 
+  FILE* file2;
 
+  file2=fopen("output","rb");
 
+  if(file2!=NULL){
+
+    struct instruction ins;
+    struct userFunc us;
+    struct strings lb;
+    struct strings st;
+    double n;
+    int z=0;
+    int t=currInstr+curr_nums+curr_funcs+curr_strings+curr_lib_funcs;
+
+    //instructions talbe
+
+    while(z<t){
+      //instructions talbe
+      if(z<currInstr){
+        fread(&ins,sizeof(struct instruction),1,file2);
+        fprintf(GOUT,"!!!! %d \n",ins.opcode);
+      }
+      //numbers
+      else if(z<currInstr+curr_nums){
+        fread(&n,sizeof(double),1,file2);
+        fprintf(GOUT,"@@@@  %f \n",n);
+      }
+      //lib_funcs
+      else if(z<currInstr+curr_nums+curr_lib_funcs){
+        fread(&lb,sizeof(struct strings),1,file2);
+        fprintf(GOUT,"###  %s \n",lb.string);
+      }
+      //user_funcs
+      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs){
+        fread(&us,sizeof(struct userFunc),1,file2);
+        fprintf(GOUT,"$$$$  %s \n",us.id);
+      }
+      //strings
+      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs+curr_strings){
+        fread(&st,sizeof(struct strings),1,file2);
+        fprintf(GOUT,"%%%%  %s \n",st.string);
+      }
+      z++;
+    }
+    fclose(file2);
+  }
 }
