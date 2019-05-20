@@ -125,7 +125,7 @@ char* libfuncs_getused(unsigned index){
 }
 
 ///////////////////////////////////////////////////////
-avm_memcell* avm_translate_operand(vmarg* arg,avm_memcell*reg){
+avm_memcell* avm_translate_operand(vmarg* arg,avm_memcell* reg){
   switch (arg->type) {
     case global_a:  return &vm_stack[AVM_STACKSIZE-1-arg->val];
     case local_a:   return &vm_stack[topsp-arg->val];
@@ -201,8 +201,46 @@ extern void memclear_table(avm_memcell* m){
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_assign(instruction* temp){
+//extern void avm_warning(char* format,...){}
 
+///////////////////////////////////////////////////////
+extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
+  /*Same cells? destructive to assign!*/
+  if(lv==rv){
+    return;
+  }
+  /*Same tables?No need to assign!*/
+  if(lv->type==table_m && rv->type==table_m && lv->data.tableVal==rv->data.tableVal){
+    return;
+  }
+  /*From undefined r-value?warning*/
+  if(rv->type==undef_m){
+    avm_warning("assigning from 'undef' content!");
+  }
+
+  /*Clear old cell contents.*/
+  avm_memcellClear(lv);
+  /*In C++ dispatch instead.*/
+  memcpy(lv,rv,sizeof(avm_memcell));
+
+  /*Now take care of copied values or reference counting*/
+  if(lv->type==string_m){
+    lv->data.strVal=strdup(rv->data.strVal);
+  }
+  else if(lv->type==table_m){
+    avm_tableincrefcounter(lv->data.tableVal);
+  }
+}
+
+///////////////////////////////////////////////////////
+extern void execute_assign(instruction* temp){
+  avm_memcell* lv=avm_translate_operand(&temp->result,(avm_memcell*) 0);
+  avm_memcell* rv=avm_translate_operand(&temp->arg1,&ax);
+
+  assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
+  assert(rv)//should do similar assertion tests here
+
+  avm_assign(lv,rv);
 }
 
 ///////////////////////////////////////////////////////
