@@ -210,7 +210,7 @@ void print_quads(FILE* out){
         }
       }
       else if(temp->arg2->type==boolexpr_e){
-        //fprintf(out,"%d\t\t\t",temp->);
+        //fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
       }
       else if(temp->arg2->type==tableitem_e){
         fprintf(out,"%s\t\t\t",temp->arg2->sym->name);
