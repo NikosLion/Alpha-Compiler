@@ -5,6 +5,10 @@
 #define AVM_WIPEOUT(m) memset(&(m),0,sizeof(m))
 #define AVM_STACKENV_SIZE 4
 #define AVM_MAX_INSTRUCTIONS (unsigned) nop_v
+#define AVM_NUMACTUALS_OFFSET 4
+#define AVM_SAVEDPC_OFFSET 3
+#define AVM_SAVEDTOP_OFFSET 2
+#define AVM_SAVEDTOPSP_OFFSET 1
 
 
 enum avm_memcell_t{
@@ -46,7 +50,8 @@ typedef struct avm_table{
 avm_memcell vm_stack[AVM_STACKSIZE];
 typedef void (*memclear_func_t)(avm_memcell*);
 typedef void (*execute_func_t)(instruction*);
-
+typedef void (*library_func_t)(void);
+library_func_t avm_getlibraryfunc(char* id); //typical hashing
 
 static void avm_initStack();
 avm_table* avm_tableNew();
@@ -66,9 +71,13 @@ extern void memclear_string(avm_memcell* m);
 extern void memclear_table(avm_memcell* m);
 void execute_cycle();
 
-//extern void avm_warning(char* format,...);  ??????????(mallon mia print apla)
+extern void avm_warning(char* format);  //??????????(mallon mia print apla)
+extern void avm_error(char* format,char* name);
+extern char* avm_tostring(avm_memcell*);
+extern void avm_calllibfunc(char* funcName);
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
 
+///////////////////////////////////////////////////////
 extern void execute_assign(instruction*);
 extern void execute_add(instruction*);
 extern void execute_sub(instruction*);
@@ -90,3 +99,10 @@ extern void execute_newtable(instruction*);
 extern void execute_tablegetelem(instruction*);
 extern void execute_tablesetelem(instruction*);
 extern void execute_nop(instruction*);
+///////////////////////////////////////////////////////
+
+extern void avm_callsaveenvionment();
+void avm_dec_top();
+void avm_push_envvalue(unsigned val);
+extern userFunc* avm_getfuncinfo(unsigned address);
+unsigned avm_get_envvalue(unsigned i);

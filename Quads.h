@@ -67,6 +67,12 @@ typedef struct jump_after_true{
 }jump_after_true;
 
 ///////////////////////////////////////////////////////
+typedef struct func_jump{
+  int label;
+  struct func_jump* next;
+}func_jump;
+
+///////////////////////////////////////////////////////
 typedef struct expr{
   enum expr_t type;
   SymbolTableEntry* sym;

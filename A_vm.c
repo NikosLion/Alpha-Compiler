@@ -5,6 +5,7 @@
 avm_memcell ax,bx,cx;
 avm_memcell retval;
 unsigned top,topsp;
+unsigned totalActuals=0;
 
 unsigned char executionFinished=0;
 unsigned      pc=0;
@@ -201,7 +202,37 @@ extern void memclear_table(avm_memcell* m){
 }
 
 ///////////////////////////////////////////////////////
-//extern void avm_warning(char* format,...){}
+extern void avm_warning(char* format){
+
+}
+
+///////////////////////////////////////////////////////
+extern void avm_error(char* format,char* name){
+
+}
+
+///////////////////////////////////////////////////////
+//caller frees
+extern char* avm_tostring(avm_memcell* temp){
+
+}
+
+///////////////////////////////////////////////////////
+extern void avm_calllibfunc(char* id){
+  library_func_t f=avm_getlibraryfunc(id);
+  if(!f){
+    avm_error("unsupported lib func 's' called!",id);
+    executionFinished=1;
+  }
+  else{
+    topsp=top;
+    totalActuals=0;
+    (*f)();
+    if(!executionFinished){
+      execute_funcexit((instruction*)0);
+    }
+  }
+}
 
 ///////////////////////////////////////////////////////
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
@@ -233,112 +264,196 @@ extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_assign(instruction* temp){
-  avm_memcell* lv=avm_translate_operand(&temp->result,(avm_memcell*) 0);
-  avm_memcell* rv=avm_translate_operand(&temp->arg1,&ax);
+extern void execute_assign(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
+  avm_memcell* rv=avm_translate_operand(instr->arg1,&ax);
 
-  assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
-  assert(rv)//should do similar assertion tests here
+//  assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
+  //assert(rv);//should do similar assertion tests here
 
   avm_assign(lv,rv);
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_add(instruction* temp){
+extern void execute_add(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_sub(instruction* temp){
+extern void execute_sub(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_mul(instruction* temp){
+extern void execute_mul(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_div(instruction* temp){
+extern void execute_div(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_mod(instruction* temp){
+extern void execute_mod(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_not(instruction* temp){
+extern void execute_not(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jeq(instruction* temp){
+extern void execute_jeq(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jne(instruction* temp){
+extern void execute_jne(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jle(instruction* temp){
+extern void execute_jle(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jge(instruction* temp){
+extern void execute_jge(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jlt(instruction* temp){
+extern void execute_jlt(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_jgt(instruction* temp){
+extern void execute_jgt(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_call(instruction* temp){
+extern void execute_call(instruction* instr){
+  avm_memcell*func=avm_translate_operand(instr->result,&ax);
+  assert(func);
+  avm_callsaveenvionment();
+
+  switch (func->type) {
+    case userfunc_m :{
+      pc=func->data.funcVal;
+      assert(pc<AVM_ENDING_PC);
+      assert(code[pc].opcode==funcenter_v);
+      break;
+    }
+    case string_m :{
+      avm_calllibfunc(func->data.strVal);
+      break;
+    }
+    case libfunc_m :{
+      avm_calllibfunc(func->data.libfuncVal);
+      break;
+    }
+    default: {
+      char *s=avm_tostring(func);
+      avm_error("call:cannot bind '%s' to function!",s);
+      free(s);
+      executionFinished=1;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+extern void execute_pusharg(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_pusharg(instruction* temp){
+extern void execute_funcenter(instruction* instr){
+  avm_memcell* func =avm_translate_operand(instr->result,&ax);
+  assert(func);
+  assert(pc=func->data.funcVal);
+
+  //calle actions here
+  totalActuals=0;
+  topsp=top;
+//  top=top-funcInfo->localSize;
+}
+
+///////////////////////////////////////////////////////
+extern void execute_funcexit(instruction* instr){
+  unsigned oldTop=top;
+  top=avm_get_envvalue(topsp+AVM_SAVEDTOP_OFFSET);
+  pc=avm_get_envvalue(topsp+AVM_SAVEDPC_OFFSET);
+  topsp=avm_get_envvalue(topsp+AVM_SAVEDTOPSP_OFFSET);
+
+  while(++oldTop<=top){
+    avm_memcellClear(&vm_stack[oldTop]);
+  }
+}
+
+///////////////////////////////////////////////////////
+extern void execute_newtable(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_funcenter(instruction* temp){
+extern void execute_tablegetelem(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_funcexit(instruction* temp){
+extern void execute_tablesetelem(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_newtable(instruction* temp){
+extern void execute_nop(instruction* instr){
 
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_tablegetelem(instruction* temp){
+///////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////
+void avm_dec_top(){
+  //stack overflow
+  if(!top){
+    avm_error("stack overflow",NULL);
+    executionFinished=1;
+  }
+  else{
+    --top;
+  }
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_tablesetelem(instruction* temp){
-
+void avm_push_envvalue(unsigned val){
+  vm_stack[top].type=number_m;
+  vm_stack[top].data.numVal=val;
+  avm_dec_top();
 }
 
 ///////////////////////////////////////////////////////
-extern void execute_nop(instruction* temp){
+void avm_callsaveenvionment(){
+  avm_push_envvalue(totalActuals);
+  avm_push_envvalue(pc+1);
+  avm_push_envvalue(top+totalActuals+2);
+  avm_push_envvalue(topsp);
+}
 
+///////////////////////////////////////////////////////
+unsigned avm_get_envvalue(unsigned i){
+  assert(vm_stack[i].type=number_m);
+  unsigned val=(unsigned)vm_stack[i].data.numVal;
+  assert(vm_stack[i].data.numVal==((double)val));
+  return val;
+}
+
+///////////////////////////////////////////////////////
+library_func_t avm_getlibraryfunc(char* id){
+  
 }
