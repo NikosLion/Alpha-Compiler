@@ -49,6 +49,24 @@ execute_func_t excecuteFuncs[]={
   execute_nop
 };
 
+tostring_func_t tostringFuncs[]={
+  number_tostring,
+  string_tostring,
+  bool_tostring,
+  table_tostring,
+  userfunc_tostring,
+  libfunc_tostring,
+  nil_tostring,
+  undef_tostring
+};
+
+arithmetic_func_t arithmeticFuncs[]={
+  add_impl,
+  sub_impl,
+  mul_impl,
+  div_impl,
+  mod_impl
+};
 
 ///////////////////////////////////////////////////////
 static void avm_initStack(){
@@ -212,13 +230,7 @@ extern void avm_error(char* format,char* name){
 }
 
 ///////////////////////////////////////////////////////
-//caller frees
-extern char* avm_tostring(avm_memcell* temp){
-
-}
-
-///////////////////////////////////////////////////////
-extern void avm_calllibfunc(char* id){
+void avm_calllibfunc(char* id){
   library_func_t f=avm_getlibraryfunc(id);
   if(!f){
     avm_error("unsupported lib func 's' called!",id);
@@ -272,31 +284,6 @@ extern void execute_assign(instruction* instr){
   //assert(rv);//should do similar assertion tests here
 
   avm_assign(lv,rv);
-}
-
-///////////////////////////////////////////////////////
-extern void execute_add(instruction* instr){
-
-}
-
-///////////////////////////////////////////////////////
-extern void execute_sub(instruction* instr){
-
-}
-
-///////////////////////////////////////////////////////
-extern void execute_mul(instruction* instr){
-
-}
-
-///////////////////////////////////////////////////////
-extern void execute_div(instruction* instr){
-
-}
-
-///////////////////////////////////////////////////////
-extern void execute_mod(instruction* instr){
-
 }
 
 ///////////////////////////////////////////////////////
@@ -367,7 +354,15 @@ extern void execute_call(instruction* instr){
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 extern void execute_pusharg(instruction* instr){
+  avm_memcell* arg=avm_translate_operand(instr->arg1,&ax);
+  assert(arg);
 
+  /*This is actually stack[top]=arg, but we have to
+    use avm_assign.
+  */
+  avm_assign(&vm_stack[top],arg);
+  ++totalActuals;
+  avm_dec_top();
 }
 
 ///////////////////////////////////////////////////////
@@ -396,12 +391,45 @@ extern void execute_funcexit(instruction* instr){
 
 ///////////////////////////////////////////////////////
 extern void execute_newtable(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result, (avm_memcell*) 0);
+  //assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
 
+  avm_memcellClear(lv);
+
+  lv->type=table_m;
+  lv->data.tableVal=avm_tableNew();
+  avm_tableincrefcounter(lv->data.tableVal);
 }
 
 ///////////////////////////////////////////////////////
 extern void execute_tablegetelem(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result, (avm_memcell*) 0);
+  avm_memcell* t=avm_translate_operand(instr->arg1, (avm_memcell*) 0);
+  avm_memcell* i=avm_translate_operand(instr->arg2, &ax);
 
+  //assert(lv && &vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval);
+  //assert(t && &vm_stack[N-1]>=t && t>&vm_stack[top]);
+  assert(i);
+
+  avm_memcellClear(lv);
+  lv->type=nil_m;   /*Default value.*/
+
+  if(t->type!=table_m){
+    //avm_error("illegal use of type &s as table!", typeStrings[t->type]);
+  }
+  else{
+    avm_memcell* content=avm_tableGetelem(t->data.tableVal, i);
+    if(content){
+      avm_assign(lv,content);
+    }
+    else{
+      char* ts=avm_tostring(t);
+      char* is=avm_tostring(i);
+      //avm_warning("%s[%s] not found!",ts,is);
+      free(ts);
+      free(is);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////
@@ -455,5 +483,142 @@ unsigned avm_get_envvalue(unsigned i){
 
 ///////////////////////////////////////////////////////
 library_func_t avm_getlibraryfunc(char* id){
-  
+
+}
+
+///////////////////////////////////////////////////////
+unsigned avm_totalactuals(){
+  return avm_get_envvalue(topsp+AVM_NUMACTUALS_OFFSET);
+}
+
+///////////////////////////////////////////////////////
+avm_memcell* avm_getactual(unsigned i){
+  assert(i<avm_totalactuals());
+  return &vm_stack[topsp+AVM_STACKENV_SIZE+1+i];
+}
+
+///////////////////////////////////////////////////////
+/*Implementation of the library function 'print'.
+  It displays every argument at the console.
+*/
+void libfunc_print(){
+  unsigned n=avm_totalactuals();
+  for(unsigned i=0;i<n;++i){
+    char* s=avm_tostring(avm_getactual(i));
+    puts(s);
+    free(s);
+  }
+}
+
+///////////////////////////////////////////////////////
+/*With the following every library function is manually
+  added in the VM library function resolution map.
+*/
+void avm_registerlibfunc(char* id,library_func_t addr){
+
+}
+
+///////////////////////////////////////////////////////
+char* avm_tostring(avm_memcell* m){
+  assert(m->type>=0 && m->type<=undef_m);
+  return (*tostringFuncs[m->type])(m);
+}
+
+///////////////////////////////////////////////////////
+extern char* number_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* string_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* bool_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* table_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* userfunc_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* libfunc_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* nil_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* undef_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+double add_impl(double x,double y){return x+y;}
+
+///////////////////////////////////////////////////////
+double sub_impl(double x,double y){return x-y;}
+
+///////////////////////////////////////////////////////
+double mul_impl(double x,double y){return x*y;}
+
+///////////////////////////////////////////////////////
+double div_impl(double x,double y){
+  if(y!=0){
+    return x/y;
+  }
+}
+
+///////////////////////////////////////////////////////
+double mod_impl(double x,double y){
+  if(y!=0){
+    return ((unsigned) x) % ((unsigned) y);
+  }
+}
+
+///////////////////////////////////////////////////////
+void execute_arithmetic(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
+  avm_memcell* rv1=avm_translate_operand(instr->arg1,&ax);
+  avm_memcell* rv2=avm_translate_operand(instr->arg2,&bx);
+
+  //assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
+  assert(rv1 && rv2);
+
+  if(rv1->type != number_a || rv2->type != number_a){
+    //avm_error("not a number in arithmetic!"); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    executionFinished=1;
+  }
+  else{
+    arithmetic_func_t op=arithmeticFuncs[instr->opcode-add_v];
+    avm_memcellClear(lv);
+    lv->type=number_m;
+    lv->data.numVal=(*op)(rv1->data.numVal,rv2->data.numVal);
+  }
+}
+
+///////////////////////////////////////////////////////
+avm_table* avm_tableNew(){
+
+}
+
+///////////////////////////////////////////////////////
+avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index){
+
+}
+
+///////////////////////////////////////////////////////
+void avm_tablesetElem(avm_table* table,avm_memcell* index,avm_memcell* content){
+
 }

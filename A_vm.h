@@ -10,6 +10,13 @@
 #define AVM_SAVEDTOP_OFFSET 2
 #define AVM_SAVEDTOPSP_OFFSET 1
 
+///////////////////////////////////////////////////////
+#define execute_add execute_arithmetic
+#define execute_sub execute_arithmetic
+#define execute_mul execute_arithmetic
+#define execute_div execute_arithmetic
+#define execute_mod execute_arithmetic
+
 
 enum avm_memcell_t{
   number_m=0,
@@ -56,8 +63,8 @@ library_func_t avm_getlibraryfunc(char* id); //typical hashing
 static void avm_initStack();
 avm_table* avm_tableNew();
 void avm_tableDestroy(avm_table* t);
-avm_memcell* avm_tableGetelem(avm_memcell* key);
-void avm_tablesetElem(avm_memcell* key,avm_memcell* value);
+avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index);
+void avm_tablesetElem(avm_table* table,avm_memcell* index,avm_memcell* content);
 void avm_memcellClear(avm_memcell* m);
 void avm_tableBucketsDestroy(avm_table_bucket** p);
 void avm_tablebucketsInit(avm_table_bucket** p);
@@ -101,8 +108,39 @@ extern void execute_tablesetelem(instruction*);
 extern void execute_nop(instruction*);
 ///////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////
+typedef char* (*tostring_func_t)(avm_memcell*);
+
+extern char* number_tostring(avm_memcell*);
+extern char* string_tostring(avm_memcell*);
+extern char* bool_tostring(avm_memcell*);
+extern char* table_tostring(avm_memcell*);
+extern char* userfunc_tostring(avm_memcell*);
+extern char* libfunc_tostring(avm_memcell*);
+extern char* nil_tostring(avm_memcell*);
+extern char* undef_tostring(avm_memcell*);
+
+char* avm_tostring(avm_memcell* m);
+///////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
+typedef double (*arithmetic_func_t)(double x,double y);
+
+double add_impl(double x,double y);
+double sub_impl(double x,double y);
+double mul_impl(double x,double y);
+double div_impl(double x,double y);
+double mod_impl(double x,double y);
+void execute_arithmetic(instruction* instr);
+///////////////////////////////////////////////////////
+
+
 extern void avm_callsaveenvionment();
 void avm_dec_top();
 void avm_push_envvalue(unsigned val);
 extern userFunc* avm_getfuncinfo(unsigned address);
 unsigned avm_get_envvalue(unsigned i);
+unsigned avm_totalactuals();
+avm_memcell* avm_getactual(unsigned i);
+void libfunc_print();
+void avm_registerlibfunc(char* id,library_func_t addr);
