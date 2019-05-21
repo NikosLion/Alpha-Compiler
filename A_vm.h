@@ -66,6 +66,9 @@ extern void memclear_string(avm_memcell* m);
 extern void memclear_table(avm_memcell* m);
 void execute_cycle();
 
+//extern void avm_warning(char* format,...);  ??????????(mallon mia print apla)
+extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
+
 extern void execute_assign(instruction*);
 extern void execute_add(instruction*);
 extern void execute_sub(instruction*);
