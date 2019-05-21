@@ -49,6 +49,44 @@ execute_func_t excecuteFuncs[]={
   execute_nop
 };
 
+///////////////////////////////////////////////////////
+tobool_func_t toboolFuncs[]={
+  number_tobool,
+  string_tobool,
+  bool_tobool,
+  table_tobool,
+  userfunc_tobool,
+  libfunc_tobool,
+  nil_tobool,
+  undef_tobool
+};
+
+///////////////////////////////////////////////////////
+char* typeStrings[]={
+    "number",
+    "string",
+    "bool",
+    "table",
+    "userfunc",
+    "libfunc"
+    "nil",
+    "undef"
+};
+
+///////////////////////////////////////////////////////
+libfunc_t lib_funcs_table[]={
+  libfunc_print,
+  libfunc_typeof,
+  libfunc_input,
+  libfunc_objectmemberkeys,
+  libfunc_objectcopy,
+  libfunc_totalarguments,
+  libfunc_argument,
+  libfunc_strtonum,
+  libfunc_sqrt,
+  libfunc_cos,
+  libfunc_sin
+};
 
 ///////////////////////////////////////////////////////
 static void avm_initStack(){
@@ -207,7 +245,7 @@ extern void avm_warning(char* format){
 }
 
 ///////////////////////////////////////////////////////
-extern void avm_error(char* format,char* name){
+extern void avm_error(char* format,char* name,char* name2,unsigned n){
 
 }
 
@@ -221,7 +259,7 @@ extern char* avm_tostring(avm_memcell* temp){
 extern void avm_calllibfunc(char* id){
   library_func_t f=avm_getlibraryfunc(id);
   if(!f){
-    avm_error("unsupported lib func 's' called!",id);
+    avm_error("unsupported lib func 's' called!",id,NULL,0);
     executionFinished=1;
   }
   else{
@@ -306,7 +344,30 @@ extern void execute_not(instruction* instr){
 
 ///////////////////////////////////////////////////////
 extern void execute_jeq(instruction* instr){
+  assert(instr->result->type==label_a);
+  avm_memcell* rv1 = avm_translate_operand(instr->arg1,&ax);
+  avm_memcell* rv2 = avm_translate_operand(instr->arg2,&bx);
 
+  unsigned char result = 0;
+
+  if(rv1->type == undef_m || rv2->type == undef_m){
+    avm_error("'undef' involved in equality!",NULL,NULL,0);
+  }
+  else if(rv1->type==nil_m || rv2->type==nil_m){
+    result=(rv1->type==nil_m && rv2->type==nil_m);
+  }
+  else if(rv1->type==bool_m || rv2->type==bool_m){
+    result=(avm_tobool(rv1)==avm_tobool(rv2));
+  }
+  else if(rv1->type !=rv2->type){
+    avm_error("'%s'=='%s' is illegal!",typeStrings[rv1->type],typeStrings[rv2->type],0);
+  }
+  else{
+
+  }
+  if(!executionFinished && result){
+    pc=instr->result->val;
+  }
 }
 
 ///////////////////////////////////////////////////////
@@ -357,7 +418,7 @@ extern void execute_call(instruction* instr){
     }
     default: {
       char *s=avm_tostring(func);
-      avm_error("call:cannot bind '%s' to function!",s);
+      avm_error("call:cannot bind '%s' to function!",s,NULL,0);
       free(s);
       executionFinished=1;
     }
@@ -406,7 +467,19 @@ extern void execute_tablegetelem(instruction* instr){
 
 ///////////////////////////////////////////////////////
 extern void execute_tablesetelem(instruction* instr){
+  avm_memcell* t=avm_translate_operand(instr->result,(avm_memcell*)0);
+  avm_memcell* i=avm_translate_operand(instr->arg1,&ax);
+  avm_memcell* c=avm_translate_operand(instr->arg2,&bx);
 
+  assert(t && &vm_stack[N-1]>=t && t>&vm_stack[top]);
+  assert(i && c);
+
+  if(t->type != table_m){
+    avm_error("illegal use of type '%s' as table",typeStrings[t->type],NULL,0);
+  }
+  else{
+    avm_tablesetElem(t->data.tableVal,i,c);
+  }
 }
 
 ///////////////////////////////////////////////////////
@@ -422,7 +495,7 @@ extern void execute_nop(instruction* instr){
 void avm_dec_top(){
   //stack overflow
   if(!top){
-    avm_error("stack overflow",NULL);
+    avm_error("stack overflow",NULL,NULL,0);
     executionFinished=1;
   }
   else{
@@ -455,5 +528,163 @@ unsigned avm_get_envvalue(unsigned i){
 
 ///////////////////////////////////////////////////////
 library_func_t avm_getlibraryfunc(char* id){
-  
+
+}
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+unsigned char number_tobool(avm_memcell* m){
+  return m->data.numVal != 0;
+}
+
+///////////////////////////////////////////////////////
+unsigned char string_tobool(avm_memcell* m){
+    return m->data.strVal[0] != 0;
+}
+
+///////////////////////////////////////////////////////
+unsigned char bool_tobool(avm_memcell* m){
+    return m->data.boolVal;
+}
+
+///////////////////////////////////////////////////////
+unsigned char table_tobool(avm_memcell* m){
+    return 1;
+}
+
+///////////////////////////////////////////////////////
+unsigned char userfunc_tobool(avm_memcell* m){
+  return 1;
+}
+
+///////////////////////////////////////////////////////
+unsigned char libfunc_tobool(avm_memcell* m){
+  return 1;
+}
+
+///////////////////////////////////////////////////////
+unsigned char nil_tobool(avm_memcell* m){
+  return 0;
+}
+
+///////////////////////////////////////////////////////
+unsigned char undef_tobool(avm_memcell* m){
+  assert(0);
+  return 0;
+}
+
+///////////////////////////////////////////////////////
+unsigned char avm_tobool(avm_memcell* m){
+  assert(m->type>=0 && m->type<undef_m);
+  return (*toboolFuncs[m->type])(m);
+}
+
+///////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+void libfunc_print(){
+
+}
+///////////////////////////////////////////////////////
+void libfunc_typeof(){
+  unsigned n =avm_totalactuals();
+  if(n!=1){
+    avm_error("one argument (not %d) expected in 'typeof'! ",NULL,NULL,n);
+  }
+  else{
+    avm_memcellClear(&retval); //dont forget to clean it up
+    retval.type=string_m;
+    //retval.data.strVal=strdup(typeStrings[avm_getactual()]);
+  }
+}
+
+///////////////////////////////////////////////////////
+void libfunc_input(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_objectmemberkeys(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_objectcopy(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_totalarguments(){
+  unsigned p_topsp=avm_get_envvalue(topsp+AVM_SAVEDTOPSP_OFFSET);
+  avm_memcellClear(&retval);
+
+  if(!p_topsp){
+    avm_error("'totalarguments' called outside a function!",NULL,NULL,0);
+    retval.type=nil_m;
+  }
+  else{
+    retval.type=number_m;
+    retval.data.numVal=avm_get_envvalue(p_topsp+AVM_NUMACTUALS_OFFSET);
+  }
+}
+
+///////////////////////////////////////////////////////
+void libfunc_argument(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_strtonum(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_sqrt(){
+
+}
+///////////////////////////////////////////////////////
+void libfunc_cos(){
+
+}
+
+///////////////////////////////////////////////////////
+void libfunc_sin(){
+
+}
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////
+void avm_initialize(){
+  avm_initStack();
+  avm_registerlibfunc("print",libfunc_print);
+  avm_registerlibfunc("typeof",libfunc_typeof);
+  avm_registerlibfunc("input",libfunc_input);
+  avm_registerlibfunc("objectmemberkeys",libfunc_objectmemberkeys);
+  avm_registerlibfunc("objectcopy",libfunc_objectcopy);
+  avm_registerlibfunc("totalarguments",libfunc_totalarguments);
+  avm_registerlibfunc("argument",libfunc_argument);
+  avm_registerlibfunc("strtonum",libfunc_strtonum);
+  avm_registerlibfunc("sqrt",libfunc_sqrt);
+  avm_registerlibfunc("cos",libfunc_cos);
+  avm_registerlibfunc("sin",libfunc_sin);
+}
+
+
+///////////////////////////////////////////////////////
+void avm_registerlibfunc(char* c,libfunc_t u){
+
+}
+
+///////////////////////////////////////////////////////
+char* avm_getactual(){
+
+}
+
+///////////////////////////////////////////////////////
+unsigned avm_totalactuals(){
+
 }

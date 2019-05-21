@@ -1,6 +1,7 @@
 #include "Vm_args.h"
 
 #define AVM_STACKSIZE 4096
+#define N 4096
 #define AVM_TABLE_HASHSIZE 211
 #define AVM_WIPEOUT(m) memset(&(m),0,sizeof(m))
 #define AVM_STACKENV_SIZE 4
@@ -21,6 +22,8 @@ enum avm_memcell_t{
   nil_m=6,
   undef_m=7
 };
+
+
 
 typedef struct avm_memcell{
   enum avm_memcell_t type;
@@ -52,12 +55,14 @@ typedef void (*memclear_func_t)(avm_memcell*);
 typedef void (*execute_func_t)(instruction*);
 typedef void (*library_func_t)(void);
 library_func_t avm_getlibraryfunc(char* id); //typical hashing
+typedef void(*libfunc_t)(void);
+
 
 static void avm_initStack();
 avm_table* avm_tableNew();
 void avm_tableDestroy(avm_table* t);
 avm_memcell* avm_tableGetelem(avm_memcell* key);
-void avm_tablesetElem(avm_memcell* key,avm_memcell* value);
+void avm_tablesetElem(avm_table* table,avm_memcell* key,avm_memcell* value);
 void avm_memcellClear(avm_memcell* m);
 void avm_tableBucketsDestroy(avm_table_bucket** p);
 void avm_tablebucketsInit(avm_table_bucket** p);
@@ -72,7 +77,7 @@ extern void memclear_table(avm_memcell* m);
 void execute_cycle();
 
 extern void avm_warning(char* format);  //??????????(mallon mia print apla)
-extern void avm_error(char* format,char* name);
+extern void avm_error(char* format,char* name,char* name2,unsigned n);
 extern char* avm_tostring(avm_memcell*);
 extern void avm_calllibfunc(char* funcName);
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
@@ -106,3 +111,34 @@ void avm_dec_top();
 void avm_push_envvalue(unsigned val);
 extern userFunc* avm_getfuncinfo(unsigned address);
 unsigned avm_get_envvalue(unsigned i);
+
+
+///////////////////////////////////////////////////////
+typedef unsigned char (*tobool_func_t)(avm_memcell*);
+unsigned char number_tobool(avm_memcell* m);
+unsigned char string_tobool(avm_memcell* m);
+unsigned char bool_tobool(avm_memcell* m);
+unsigned char table_tobool(avm_memcell* m);
+unsigned char userfunc_tobool(avm_memcell* m);
+unsigned char libfunc_tobool(avm_memcell* m);
+unsigned char nil_tobool(avm_memcell* m);
+unsigned char undef_tobool(avm_memcell* m);
+unsigned char avm_tobool(avm_memcell* m);
+//////////////////////////////////////////////////////
+void libfunc_print();
+void libfunc_typeof();
+void libfunc_input();
+void libfunc_objectmemberkeys();
+void libfunc_objectcopy();
+void libfunc_totalarguments();
+void libfunc_argument();
+void libfunc_strtonum();
+void libfunc_sqrt();
+void libfunc_cos();
+void libfunc_sin();
+//////////////////////////////////////////////////////
+void avm_initialize();
+void libfunc_totalarguments();
+void avm_registerlibfunc(char* c,libfunc_t u);
+char* avm_getactual();
+unsigned avm_totalactuals();
