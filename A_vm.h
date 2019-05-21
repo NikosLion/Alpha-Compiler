@@ -175,5 +175,5 @@ void libfunc_sin();
 void avm_initialize();
 void libfunc_totalarguments();
 void avm_registerlibfunc(char* c,libfunc_t u);
-char* avm_getactual();
+avm_memcell* avm_getactual(unsigned i);
 unsigned avm_totalactuals();

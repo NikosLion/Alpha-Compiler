@@ -87,7 +87,7 @@ libfunc_t lib_funcs_table[]={
   libfunc_sqrt,
   libfunc_cos,
   libfunc_sin
-}
+};
 
 tostring_func_t tostringFuncs[]={
   number_tostring,
@@ -612,27 +612,7 @@ unsigned char avm_tobool(avm_memcell* m){
 
 
 ///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-void libfunc_print(){
 
-}
-///////////////////////////////////////////////////////
-void libfunc_typeof(){
-  unsigned n =avm_totalactuals();
-  if(n!=1){
-    avm_error("one argument (not %d) expected in 'typeof'! ",NULL,NULL,n);
-  }
-  else{
-    avm_memcellClear(&retval); //dont forget to clean it up
-    retval.type=string_m;
-    //retval.data.strVal=strdup(typeStrings[avm_getactual()]);
-  }
-}
-
-///////////////////////////////////////////////////////
-void libfunc_input(){
-
-}
 
 ///////////////////////////////////////////////////////
 unsigned avm_totalactuals(){
@@ -643,19 +623,6 @@ unsigned avm_totalactuals(){
 avm_memcell* avm_getactual(unsigned i){
   assert(i<avm_totalactuals());
   return &vm_stack[topsp+AVM_STACKENV_SIZE+1+i];
-}
-
-///////////////////////////////////////////////////////
-/*Implementation of the library function 'print'.
-  It displays every argument at the console.
-*/
-void libfunc_print(){
-  unsigned n=avm_totalactuals();
-  for(unsigned i=0;i<n;++i){
-    char* s=avm_tostring(avm_getactual(i));
-    puts(s);
-    free(s);
-  }
 }
 
 ///////////////////////////////////////////////////////
@@ -692,23 +659,64 @@ extern char* table_tostring(avm_memcell* m){
 
 }
 
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
+void avm_initialize(){
+  avm_initStack();
+  avm_registerlibfunc("print",libfunc_print);
+  avm_registerlibfunc("typeof",libfunc_typeof);
+  avm_registerlibfunc("input",libfunc_input);
+  avm_registerlibfunc("objectmemberkeys",libfunc_objectmemberkeys);
+  avm_registerlibfunc("objectcopy",libfunc_objectcopy);
+  avm_registerlibfunc("totalarguments",libfunc_totalarguments);
+  avm_registerlibfunc("argument",libfunc_argument);
+  avm_registerlibfunc("strtonum",libfunc_strtonum);
+  avm_registerlibfunc("sqrt",libfunc_sqrt);
+  avm_registerlibfunc("cos",libfunc_cos);
+  avm_registerlibfunc("sin",libfunc_sin);
+}
+
+///////////////////////////////////////////////////////
+/*Implementation of the library function 'print'.
+  It displays every argument at the console.
+*/
+void libfunc_print(){
+  unsigned n=avm_totalactuals();
+  for(unsigned i=0;i<n;++i){
+    char* s=avm_tostring(avm_getactual(i));
+    puts(s);
+    free(s);
+  }
+}
+
+///////////////////////////////////////////////////////
+void libfunc_typeof(){
+  unsigned n =avm_totalactuals();
+  if(n!=1){
+    avm_error("one argument (not %d) expected in 'typeof'! ",NULL,NULL,n);
+  }
+  else{
+    avm_memcellClear(&retval); //dont forget to clean it up
+    retval.type=string_m;
+    //retval.data.strVal=strdup(typeStrings[avm_getactual()]);
+  }
+}
+
+///////////////////////////////////////////////////////
+void libfunc_input(){
+
+}
+
 ///////////////////////////////////////////////////////
 void libfunc_objectmemberkeys(){
 
 }
-///////////////////////////////////////////////////////
-extern char* userfunc_tostring(avm_memcell* m){
-
-}
 
 ///////////////////////////////////////////////////////
-
 void libfunc_objectcopy(){
-
-}
-
-///////////////////////////////////////////////////////
-extern char* libfunc_tostring(avm_memcell* m){
 
 }
 
@@ -733,18 +741,6 @@ void libfunc_argument(){
 }
 
 ///////////////////////////////////////////////////////
-extern char* nil_tostring(avm_memcell* m){
-
-}
-
-///////////////////////////////////////////////////////
-extern char* undef_tostring(avm_memcell* m){
-
-
-}
-
-///////////////////////////////////////////////////////
-<<<<<<< HEAD
 void libfunc_strtonum(){
 
 }
@@ -767,27 +763,26 @@ void libfunc_sin(){
 
 
 ///////////////////////////////////////////////////////
-void avm_initialize(){
-  avm_initStack();
-  avm_registerlibfunc("print",libfunc_print);
-  avm_registerlibfunc("typeof",libfunc_typeof);
-  avm_registerlibfunc("input",libfunc_input);
-  avm_registerlibfunc("objectmemberkeys",libfunc_objectmemberkeys);
-  avm_registerlibfunc("objectcopy",libfunc_objectcopy);
-  avm_registerlibfunc("totalarguments",libfunc_totalarguments);
-  avm_registerlibfunc("argument",libfunc_argument);
-  avm_registerlibfunc("strtonum",libfunc_strtonum);
-  avm_registerlibfunc("sqrt",libfunc_sqrt);
-  avm_registerlibfunc("cos",libfunc_cos);
-  avm_registerlibfunc("sin",libfunc_sin);
-}
+extern char* userfunc_tostring(avm_memcell* m){
 
+}
 
 ///////////////////////////////////////////////////////
-void avm_registerlibfunc(char* c,libfunc_t u){
+extern char* nil_tostring(avm_memcell* m){
 
 }
 
+///////////////////////////////////////////////////////
+extern char* undef_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* libfunc_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
 double add_impl(double x,double y){return x+y;}
 
 ///////////////////////////////////////////////////////
@@ -838,18 +833,8 @@ avm_table* avm_tableNew(){
 }
 
 ///////////////////////////////////////////////////////
-
-char* avm_getactual(){
-
-}
 avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index){
 
-
-}
-
-///////////////////////////////////////////////////////
-
-unsigned avm_totalactuals(){
 
 }
 
