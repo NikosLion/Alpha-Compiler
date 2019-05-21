@@ -19,17 +19,17 @@ int temp_return_counter=0;
   me ta library functions.
 */
 void init_symTable(){
-    insert_SymTable("print",0,0,5,0,programvar);
-    insert_SymTable("input",0,0,5,0,programvar);
-    insert_SymTable("objectmemberkeys",0,0,5,0,programvar);
-    insert_SymTable("objectcopy",0,0,5,0,programvar);
-    insert_SymTable("totalarguments",0,0,5,0,programvar);
-    insert_SymTable("argument",0,0,5,0,programvar);
-    insert_SymTable("typeof",0,0,5,0,programvar);
-    insert_SymTable("strtonum",0,0,5,0,programvar);
-    insert_SymTable("sqrt",0,0,5,0,programvar);
-    insert_SymTable("cos",0,0,5,0,programvar);
-    insert_SymTable("sin",0,0,5,0,programvar);
+    insert_SymTable("print",0,0,5,0,programvar,0);
+    insert_SymTable("input",0,0,5,0,programvar,0);
+    insert_SymTable("objectmemberkeys",0,0,5,0,programvar,0);
+    insert_SymTable("objectcopy",0,0,5,0,programvar,0);
+    insert_SymTable("totalarguments",0,0,5,0,programvar,0);
+    insert_SymTable("argument",0,0,5,0,programvar,0);
+    insert_SymTable("typeof",0,0,5,0,programvar,0);
+    insert_SymTable("strtonum",0,0,5,0,programvar,0);
+    insert_SymTable("sqrt",0,0,5,0,programvar,0);
+    insert_SymTable("cos",0,0,5,0,programvar,0);
+    insert_SymTable("sin",0,0,5,0,programvar,0);
 }
 
 /////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ void print_symTable(FILE* out){
         fprintf(out,"    \n");
         fasi2=fasi;
         while(fasi2!=NULL){
-            fprintf(out,"Token:  %s |  Scope:  %d |  Line:  %d |  Type: %d\n",fasi2->name,fasi2->scope,fasi2->line,fasi2->type);
+            fprintf(out,"Token:  %s |  Scope:  %d |  Type:  %d |  Offset:  %d |  Line %d\n",fasi2->name,fasi2->scope,fasi2->type,fasi2->offset,fasi2->line);
             fasi2=fasi2->scope_next;
         }
         fprintf(out,"\n");
@@ -90,7 +90,7 @@ int HideVar(int scope){
   parametrous to onoma, to scope, th grammh pou
   vrethike to symvolo kai ton typo tou.
 */
-void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space){
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space,unsigned func_locs){
 
     newEntry=(struct SymbolTableEntry*)malloc(sizeof(struct SymbolTableEntry));
 
@@ -105,6 +105,7 @@ void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int s
     newEntry->type=enu;
     newEntry->offset=offset;
     newEntry->space=space;
+    newEntry->func_locals=func_locs;
 
     if(ScopeListHead==NULL){
         ScopeListHead=newEntry;
@@ -411,6 +412,7 @@ char *temp_name_func() {
   temp_func_counter++;
   return yo;
 }
+
 /////////////////////////////////////////////////
 char* temp_name_return(){
   char s[20];

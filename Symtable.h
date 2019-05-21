@@ -1,4 +1,8 @@
 #include <stdio.h>
+FILE *GOUT;
+extern int yylineno;
+extern char *yytext;
+extern FILE *yyin;
 
 enum SymbolType{
     global=1 , local=2 , formal=3, userfunc=4 , libfunc=5
@@ -8,6 +12,10 @@ enum scopespace_t{
   programvar, functionlocal, formalarg
 };
 
+typedef struct return_list{
+  unsigned label;
+  struct return_list* next;
+}return_list;
 
 typedef struct SymbolTableEntry{
     int isActive;
@@ -17,7 +25,10 @@ typedef struct SymbolTableEntry{
     enum SymbolType type;
     enum scopespace_t space;
     unsigned offset;
+    unsigned func_locals;
+    unsigned taddress;
     struct FuncArg *args;
+    struct return_list* ret_head;
     struct SymbolTableEntry *scope_list_next;
     struct SymbolTableEntry *scope_next;
 }SymbolTableEntry;
@@ -43,7 +54,7 @@ char *temp_name_func();
 char *temp_name_return();
 
 int HideVar(int scope);
-void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space);
+void insert_SymTable(char *name,int scope,int line,int enu,unsigned offset,int space,unsigned func_locs);
 void print_symTable(FILE* out);
 void init_symTable();
 int lookup_symTable(char *name,int scope,int type);         //search_cond 0 for same scope lookup,1 for global lookup
