@@ -40,8 +40,6 @@ enum avm_memcell_t{
   undef_m=7
 };
 
-
-
 typedef struct avm_memcell{
   enum avm_memcell_t type;
   union{
@@ -70,12 +68,12 @@ typedef struct avm_table{
 avm_memcell vm_stack[AVM_STACKSIZE];
 typedef void (*memclear_func_t)(avm_memcell*);
 typedef void (*execute_func_t)(instruction*);
-typedef void(*libfunc_t)(void);
+typedef void (*libfunc_t)();
 libfunc_t avm_getlibraryfunc(char* id); //typical hashing
 
 
 
-static void avm_initStack();
+void avm_initStack();
 avm_table* avm_tableNew();
 void avm_tableDestroy(avm_table* t);
 
@@ -96,7 +94,6 @@ void execute_cycle();
 
 extern void avm_warning(char*,char*,char*);
 extern void avm_error(char* format,char* name,char* name2,unsigned n);
-extern char* avm_tostring(avm_memcell*);
 extern void avm_calllibfunc(char* funcName);
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
 
@@ -127,6 +124,7 @@ extern void execute_nop(instruction*);
 ///////////////////////////////////////////////////////
 typedef char* (*tostring_func_t)(avm_memcell*);
 
+extern char* avm_tostring(avm_memcell*);
 extern char* number_tostring(avm_memcell*);
 extern char* string_tostring(avm_memcell*);
 extern char* bool_tostring(avm_memcell*);
@@ -135,9 +133,6 @@ extern char* userfunc_tostring(avm_memcell*);
 extern char* libfunc_tostring(avm_memcell*);
 extern char* nil_tostring(avm_memcell*);
 extern char* undef_tostring(avm_memcell*);
-
-char* avm_tostring(avm_memcell* m);
-///////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////
 typedef double (*arithmetic_func_t)(double x,double y);
@@ -194,3 +189,4 @@ unsigned consts_newnumber2(double n);
 unsigned libfuncs_newused2(char* s);
 unsigned userfuncs_newfunc2(userFunc* sym);
 void expand_tables2(int i);
+void setGlobmem();

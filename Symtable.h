@@ -62,3 +62,4 @@ int lookup_symTable2(char *name,int scope,int type);
 int isUserFunc(int scope);
 int checkFuncName(char *name,int scope);
 int look_lib_func(char *name);
+SymbolTableEntry* getHead();

@@ -10,6 +10,8 @@ unsigned      pc=0;
 unsigned      currLine=0;
 unsigned      codeSize=0;
 unsigned      currCode=0;
+unsigned      globmem=0;
+unsigned      globmem_end=0;
 
 instruction*  code=(instruction*) 0;
 userFunc* user_funcs2 = (userFunc*) 0;
@@ -92,8 +94,6 @@ char* typeStrings[]={
     "undef"
 };
 
-
-
 tostring_func_t tostringFuncs[]={
   number_tostring,
   string_tostring,
@@ -114,11 +114,30 @@ arithmetic_func_t arithmeticFuncs[]={
 };
 
 ///////////////////////////////////////////////////////
-static void avm_initStack(){
+void avm_initStack(){
   for (unsigned i=0; i<AVM_STACKSIZE; ++i){
     AVM_WIPEOUT(vm_stack[i]);
     vm_stack[i].type=undef_m;
   }
+}
+
+///////////////////////////////////////////////////////
+void avm_dec_top(){
+  //stack overflow
+  if(!top){
+    avm_error("stack overflow",NULL,NULL,0);
+    executionFinished=1;
+  }
+  else{
+    --top;
+  }
+}
+
+///////////////////////////////////////////////////////
+void avm_push_envvalue(unsigned val){
+  vm_stack[top].type=number_m;
+  vm_stack[top].data.numVal=val;
+  avm_dec_top();
 }
 
 ///////////////////////////////////////////////////////
@@ -208,19 +227,48 @@ void execute_arithmetic(instruction* instr){
 }
 
 ///////////////////////////////////////////////////////
+extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
+  /*Same cells? destructive to assign!*/
+  if(lv==rv){
+    return;
+  }
+  /*Same tables?No need to assign!*/
+  if(lv->type==table_m && rv->type==table_m && lv->data.tableVal==rv->data.tableVal){
+    return;
+  }
+  /*From undefined r-value?warning*/
+  if(rv->type==undef_m){
+    avm_warning("assigning from 'undef' content!",NULL,NULL);
+  }
+
+  /*Clear old cell contents.*/
+  avm_memcellClear(lv);
+  /*In C++ dispatch instead.*/
+  memcpy(lv,rv,sizeof(avm_memcell));
+
+  /*Now take care of copied values or reference counting*/
+  if(lv->type==string_m){
+    lv->data.strVal=strdup(rv->data.strVal);
+  }
+  else if(lv->type==table_m){
+    avm_tableincrefcounter(lv->data.tableVal);
+  }
+}
+
+///////////////////////////////////////////////////////
 extern void execute_assign(instruction* instr){
   avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
   avm_memcell* rv=avm_translate_operand(instr->arg1,&ax);
 
   assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
-  //assert(rv);//should do similar assertion tests here
+  assert(rv); //8elei ki alla checks
 
   avm_assign(lv,rv);
 }
 
 ///////////////////////////////////////////////////////
 extern void execute_not(instruction* instr){
-
+  //etoimh apo merikh apotimish
 }
 
 ///////////////////////////////////////////////////////
@@ -346,7 +394,7 @@ extern void execute_funcexit(instruction* instr){
 ///////////////////////////////////////////////////////
 extern void execute_newtable(instruction* instr){
   avm_memcell* lv=avm_translate_operand(instr->result, (avm_memcell*) 0);
-  //assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
+  assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
 
   avm_memcellClear(lv);
 
@@ -361,8 +409,8 @@ extern void execute_tablegetelem(instruction* instr){
   avm_memcell* t=avm_translate_operand(instr->arg1, (avm_memcell*) 0);
   avm_memcell* i=avm_translate_operand(instr->arg2, &ax);
 
-  //assert(lv && &vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval);
-  //assert(t && &vm_stack[N-1]>=t && t>&vm_stack[top]);
+  assert(lv && &vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval);
+  assert(t && &vm_stack[N-1]>=t && t>&vm_stack[top]);
   assert(i);
 
   avm_memcellClear(lv);
@@ -405,7 +453,7 @@ extern void execute_tablesetelem(instruction* instr){
 
 ///////////////////////////////////////////////////////
 extern void execute_nop(instruction* instr){
-
+  executionFinished=1;
 }
 
 ///////////////////////////////////////////////////////
@@ -430,53 +478,6 @@ extern void memclear_string(avm_memcell* m){
 extern void memclear_table(avm_memcell* m){
   assert(m->data.tableVal);
   avm_tabledecrefcounter(m->data.tableVal);
-}
-
-
-///////////////////////////////////////////////////////
-void avm_calllibfunc(char* id){
-  libfunc_t f=avm_getlibraryfunc(id);
-  if(!f){
-    avm_error("unsupported lib func 's' called!",id,NULL,0);
-    executionFinished=1;
-  }
-  else{
-    topsp=top;
-    totalActuals=0;
-    (*f)();
-    if(!executionFinished){
-      execute_funcexit((instruction*)0);
-    }
-  }
-}
-
-///////////////////////////////////////////////////////
-extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
-  /*Same cells? destructive to assign!*/
-  if(lv==rv){
-    return;
-  }
-  /*Same tables?No need to assign!*/
-  if(lv->type==table_m && rv->type==table_m && lv->data.tableVal==rv->data.tableVal){
-    return;
-  }
-  /*From undefined r-value?warning*/
-  if(rv->type==undef_m){
-    avm_warning("assigning from 'undef' content!",NULL,NULL);
-  }
-
-  /*Clear old cell contents.*/
-  avm_memcellClear(lv);
-  /*In C++ dispatch instead.*/
-  memcpy(lv,rv,sizeof(avm_memcell));
-
-  /*Now take care of copied values or reference counting*/
-  if(lv->type==string_m){
-    lv->data.strVal=strdup(rv->data.strVal);
-  }
-  else if(lv->type==table_m){
-    avm_tableincrefcounter(lv->data.tableVal);
-  }
 }
 
 ///////////////////////////////////////////////////////
@@ -518,25 +519,6 @@ void avm_tablebucketsInit(avm_table_bucket** p){
   for(unsigned i=0; i<AVM_TABLE_HASHSIZE; ++i){
     p[i]=(avm_table_bucket*)0;
   }
-}
-
-///////////////////////////////////////////////////////
-void avm_dec_top(){
-  //stack overflow
-  if(!top){
-    avm_error("stack overflow",NULL,NULL,0);
-    executionFinished=1;
-  }
-  else{
-    --top;
-  }
-}
-
-///////////////////////////////////////////////////////
-void avm_push_envvalue(unsigned val){
-  vm_stack[top].type=number_m;
-  vm_stack[top].data.numVal=val;
-  avm_dec_top();
 }
 
 ///////////////////////////////////////////////////////
@@ -628,12 +610,43 @@ void avm_registerlibfunc(char* id,libfunc_t addr){
 
 ///////////////////////////////////////////////////////
 libfunc_t avm_getlibraryfunc(char* id){
-
+  if(strcmp(id,"print")==0){
+    (*lib_funcs_table[0])();
+  }
+  else if(strcmp(id,"typeof")==0){
+    (*lib_funcs_table[1])();
+  }
+  else if(strcmp(id,"input")==0){
+    (*lib_funcs_table[2])();
+  }
+  else if(strcmp(id,"objectmemberkeys")==0){
+    (*lib_funcs_table[3])();
+  }
+  else if(strcmp(id,"objectcopy")==0){
+    (*lib_funcs_table[4])();
+  }
+  else if(strcmp(id,"totalarguments")==0){
+    (*lib_funcs_table[5])();
+  }
+  else if(strcmp(id,"argument")==0){
+    (*lib_funcs_table[6])();
+  }
+  else if(strcmp(id,"strtonum")==0){
+    (*lib_funcs_table[7])();
+  }
+  else if(strcmp(id,"sqrt")==0){
+    (*lib_funcs_table[8])();
+  }
+  else if(strcmp(id,"cos")==0){
+    (*lib_funcs_table[10])();
+  }
+  else if(strcmp(id,"sin")==0){
+    (*lib_funcs_table[11])();
+  }
 }
 
 ///////////////////////////////////////////////////////
 void avm_initialize(){
-  avm_initStack();
   avm_registerlibfunc("print",libfunc_print);
   avm_registerlibfunc("typeof",libfunc_typeof);
   avm_registerlibfunc("input",libfunc_input);
@@ -645,6 +658,23 @@ void avm_initialize(){
   avm_registerlibfunc("sqrt",libfunc_sqrt);
   avm_registerlibfunc("cos",libfunc_cos);
   avm_registerlibfunc("sin",libfunc_sin);
+}
+
+///////////////////////////////////////////////////////
+void avm_calllibfunc(char* id){
+  libfunc_t f=avm_getlibraryfunc(id);
+  if(!f){
+    avm_error("unsupported lib func 's' called!",id,NULL,0);
+    executionFinished=1;
+  }
+  else{
+    topsp=top;
+    totalActuals=0;
+    (*f)();
+    if(!executionFinished){
+      execute_funcexit((instruction*)0);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////
@@ -1038,4 +1068,23 @@ void expand_tables2(int i){
     fprintf(GOUT,"give right input noob!!!\n");
     assert(0);
   }
+}
+
+///////////////////////////////////////////////////////
+void setGlobmem(){
+  struct SymbolTableEntry *temp=getHead();
+  struct SymbolTableEntry *temp2=temp;
+  int count_globs=0;
+  while(temp!=NULL){
+    while(temp2!=NULL){
+      if((temp2->space == programvar) && (temp2->type!=5)){
+        count_globs++;
+      }
+      temp2=temp2->scope_next;
+    }
+    temp=temp->scope_list_next;
+    temp2=temp;
+  }
+  globmem=AVM_STACKSIZE;
+  globmem_end=AVM_STACKSIZE-count_globs-1;
 }

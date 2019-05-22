@@ -422,3 +422,8 @@ char* temp_name_return(){
   temp_return_counter++;
   return yo;
 }
+
+/////////////////////////////////////////////////
+SymbolTableEntry* getHead(){
+  return ScopeListHead;
+}
