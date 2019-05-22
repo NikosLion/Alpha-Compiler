@@ -168,6 +168,7 @@ void call_generators (){
   for(quad_runner=0;quad_runner<currQuad;++quad_runner){
     (*generators[(getQuads()+quad_runner)->op])(getQuads()+quad_runner);
   }
+  nop_emit();
 }
 
 ///////////////////////////////////////////////////////
@@ -774,6 +775,15 @@ SymbolTableEntry* top_func(){
 }
 
 ///////////////////////////////////////////////////////
+void nop_emit(){
+  struct instruction *nop;
+  nop=(struct instruction*)malloc(sizeof(struct instruction));
+  nop->opcode=nop_v;
+  emit_ins(nop);
+  return;
+}
+
+///////////////////////////////////////////////////////
 FILE* convert_to_binary(){
 
   FILE* file;
@@ -821,55 +831,3 @@ FILE* convert_to_binary(){
       fclose(file);
     }
   }
-
-///////////////////////////////////////////////////////
-//READ BINARY
-void Read_froms_Binary(){
-
-  FILE* file2;
-
-  file2=fopen("output","rb");
-
-  if(file2!=NULL){
-
-    struct instruction ins;
-    struct userFunc us;
-    struct strings lb;
-    struct strings st;
-    double n;
-    int z=0;
-    int t=currInstr+curr_nums+curr_funcs+curr_strings+curr_lib_funcs;
-
-    //instructions talbe
-
-    while(z<t){
-      //instructions talbe
-      if(z<currInstr){
-        fread(&ins,sizeof(struct instruction),1,file2);
-        fprintf(GOUT,"!!!! %d \n",ins.opcode);
-      }
-      //numbers
-      else if(z<currInstr+curr_nums){
-        fread(&n,sizeof(double),1,file2);
-        fprintf(GOUT,"@@@@  %f \n",n);
-      }
-      //lib_funcs
-      else if(z<currInstr+curr_nums+curr_lib_funcs){
-        fread(&lb,sizeof(struct strings),1,file2);
-        fprintf(GOUT,"###  %s \n",lb.string);
-      }
-      //user_funcs
-      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs){
-        fread(&us,sizeof(struct userFunc),1,file2);
-        fprintf(GOUT,"$$$$  %s \n",us.id);
-      }
-      //strings
-      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs+curr_strings){
-        fread(&st,sizeof(struct strings),1,file2);
-        fprintf(GOUT,"%%%%  %s \n",st.string);
-      }
-      z++;
-    }
-    fclose(file2);
-  }
-}

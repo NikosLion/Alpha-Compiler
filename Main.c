@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Vm_args.h"
+#include "A_vm.h"
 #include "parser.h"
 
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv){
   patch_incomplete_jumps();
   print_instructions_table(GOUT);
   convert_to_binary();
-  //Read_froms_Binary();
+  Read_froms_Binary();
   fclose(yyin);
 
   if(GOUT!=stdout){

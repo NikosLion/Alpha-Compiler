@@ -5,6 +5,7 @@
 #define AVM_TABLE_HASHSIZE 211
 #define AVM_WIPEOUT(m) memset(&(m),0,sizeof(m))
 #define AVM_STACKENV_SIZE 4
+#define AVM_ENDING_PC codeSize
 #define AVM_MAX_INSTRUCTIONS (unsigned) nop_v
 #define AVM_NUMACTUALS_OFFSET 4
 #define AVM_SAVEDPC_OFFSET 3
@@ -17,6 +18,15 @@
 #define execute_mul execute_arithmetic
 #define execute_div execute_arithmetic
 #define execute_mod execute_arithmetic
+
+unsigned total_funcs2;
+unsigned total_lib_funcs2;
+unsigned total_strings2;
+unsigned total_nums2;
+unsigned curr_funcs2;
+unsigned curr_lib_funcs2;
+unsigned curr_strings2;
+unsigned curr_nums2;
 
 
 enum avm_memcell_t{
@@ -60,9 +70,9 @@ typedef struct avm_table{
 avm_memcell vm_stack[AVM_STACKSIZE];
 typedef void (*memclear_func_t)(avm_memcell*);
 typedef void (*execute_func_t)(instruction*);
-typedef void (*library_func_t)(void);
-library_func_t avm_getlibraryfunc(char* id); //typical hashing
 typedef void(*libfunc_t)(void);
+libfunc_t avm_getlibraryfunc(char* id); //typical hashing
+
 
 
 static void avm_initStack();
@@ -84,7 +94,7 @@ extern void memclear_string(avm_memcell* m);
 extern void memclear_table(avm_memcell* m);
 void execute_cycle();
 
-extern void avm_warning(char* format);  //??????????(mallon mia print apla)
+extern void avm_warning(char*,char*,char*);
 extern void avm_error(char* format,char* name,char* name2,unsigned n);
 extern char* avm_tostring(avm_memcell*);
 extern void avm_calllibfunc(char* funcName);
@@ -177,3 +187,10 @@ void libfunc_totalarguments();
 void avm_registerlibfunc(char* c,libfunc_t u);
 avm_memcell* avm_getactual(unsigned i);
 unsigned avm_totalactuals();
+void Read_froms_Binary();
+void emit_ins2(instruction* instr);
+unsigned consts_newstring2(char* s);
+unsigned consts_newnumber2(double n);
+unsigned libfuncs_newused2(char* s);
+unsigned userfuncs_newfunc2(userFunc* sym);
+void expand_tables2(int i);

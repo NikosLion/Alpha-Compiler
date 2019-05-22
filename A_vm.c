@@ -1,7 +1,5 @@
 #include "A_vm.h"
 
-#define AVM_ENDING_PC codeSize
-
 avm_memcell ax,bx,cx;
 avm_memcell retval;
 unsigned top,topsp;
@@ -11,7 +9,13 @@ unsigned char executionFinished=0;
 unsigned      pc=0;
 unsigned      currLine=0;
 unsigned      codeSize=0;
+unsigned      currCode=0;
+
 instruction*  code=(instruction*) 0;
+userFunc* user_funcs2 = (userFunc*) 0;
+strings* lib_funcs2 = (strings*) 0;
+strings* string_consts2 = (strings*)0;
+double* numbers2 =(double*) 0;
 
 memclear_func_t memclearFuncs[]={
   0, //number
@@ -49,6 +53,20 @@ execute_func_t excecuteFuncs[]={
   execute_nop
 };
 
+///////////////////////////////////////////////////////
+libfunc_t lib_funcs_table[]={
+  libfunc_print,
+  libfunc_typeof,
+  libfunc_input,
+  libfunc_objectmemberkeys,
+  libfunc_objectcopy,
+  libfunc_totalarguments,
+  libfunc_argument,
+  libfunc_strtonum,
+  libfunc_sqrt,
+  libfunc_cos,
+  libfunc_sin
+};
 
 ///////////////////////////////////////////////////////
 tobool_func_t toboolFuncs[]={
@@ -74,20 +92,7 @@ char* typeStrings[]={
     "undef"
 };
 
-///////////////////////////////////////////////////////
-libfunc_t lib_funcs_table[]={
-  libfunc_print,
-  libfunc_typeof,
-  libfunc_input,
-  libfunc_objectmemberkeys,
-  libfunc_objectcopy,
-  libfunc_totalarguments,
-  libfunc_argument,
-  libfunc_strtonum,
-  libfunc_sqrt,
-  libfunc_cos,
-  libfunc_sin
-};
+
 
 tostring_func_t tostringFuncs[]={
   number_tostring,
@@ -114,73 +119,6 @@ static void avm_initStack(){
     AVM_WIPEOUT(vm_stack[i]);
     vm_stack[i].type=undef_m;
   }
-}
-
-///////////////////////////////////////////////////////
-void avm_tableDestroy(avm_table* t){
-  avm_tableBucketsDestroy(t->strIndexed);
-  avm_tableBucketsDestroy(t->numIndexed);
-  free(t);
-}
-
-///////////////////////////////////////////////////////
-void avm_tableBucketsDestroy(avm_table_bucket** p){
-  for(unsigned i=0; i<AVM_TABLE_HASHSIZE; ++i, ++p){
-    for(avm_table_bucket* b=*p; b;){
-      avm_table_bucket* del=b;
-      b=b->next;
-      avm_memcellClear(&del->key);
-      avm_memcellClear(&del->value);
-      free(del);
-    }
-    p[i]=(avm_table_bucket*) 0;
-  }
-}
-
-///////////////////////////////////////////////////////
-void avm_tableincrefcounter(avm_table* t){
-  ++t->refCounter;
-}
-
-///////////////////////////////////////////////////////
-void avm_tabledecrefcounter(avm_table* t){
-  assert(t->refCounter>0);
-  if(!--t->refCounter){
-    avm_tableDestroy(t);
-  }
-}
-
-///////////////////////////////////////////////////////
-void avm_tablebucketsInit(avm_table_bucket** p){
-  for(unsigned i=0; i<AVM_TABLE_HASHSIZE; ++i){
-    p[i]=(avm_table_bucket*)0;
-  }
-}
-
-///////////////////////////////////////////////////////
-void avm_memcellClear(avm_memcell* m){
-  if(m->type!=undef_m){
-    memclear_func_t f=memclearFuncs[m->type];
-    if(f){
-      (*f)(m);
-    }
-    m->type=undef_m;
-  }
-}
-
-///////////////////////////////////////////////////////
-double consts_getnumber(unsigned index){
-
-}
-
-///////////////////////////////////////////////////////
-char* const_getstring(unsigned index){
-
-}
-
-///////////////////////////////////////////////////////
-char* libfuncs_getused(unsigned index){
-
 }
 
 ///////////////////////////////////////////////////////
@@ -224,6 +162,7 @@ avm_memcell* avm_translate_operand(vmarg* arg,avm_memcell* reg){
 }
 
 ///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 void execute_cycle(){
   if(executionFinished){
     return;
@@ -248,70 +187,23 @@ void execute_cycle(){
 }
 
 ///////////////////////////////////////////////////////
-extern void memclear_string(avm_memcell* m){
-  assert(m->data.strVal);
-  free(m->data.strVal);
-}
+void execute_arithmetic(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
+  avm_memcell* rv1=avm_translate_operand(instr->arg1,&ax);
+  avm_memcell* rv2=avm_translate_operand(instr->arg2,&bx);
 
-///////////////////////////////////////////////////////
-extern void memclear_table(avm_memcell* m){
-  assert(m->data.tableVal);
-  avm_tabledecrefcounter(m->data.tableVal);
-}
+  assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
+  assert(rv1 && rv2);
 
-///////////////////////////////////////////////////////
-extern void avm_warning(char* format){
-
-}
-
-///////////////////////////////////////////////////////
-extern void avm_error(char* format,char* name,char* name2,unsigned n){
-
-}
-
-///////////////////////////////////////////////////////
-void avm_calllibfunc(char* id){
-  library_func_t f=avm_getlibraryfunc(id);
-  if(!f){
-    avm_error("unsupported lib func 's' called!",id,NULL,0);
+  if(rv1->type != number_a || rv2->type != number_a){
+    avm_error("not a number in arithmetic!",NULL,NULL,0);
     executionFinished=1;
   }
   else{
-    topsp=top;
-    totalActuals=0;
-    (*f)();
-    if(!executionFinished){
-      execute_funcexit((instruction*)0);
-    }
-  }
-}
-
-///////////////////////////////////////////////////////
-extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
-  /*Same cells? destructive to assign!*/
-  if(lv==rv){
-    return;
-  }
-  /*Same tables?No need to assign!*/
-  if(lv->type==table_m && rv->type==table_m && lv->data.tableVal==rv->data.tableVal){
-    return;
-  }
-  /*From undefined r-value?warning*/
-  if(rv->type==undef_m){
-    avm_warning("assigning from 'undef' content!");
-  }
-
-  /*Clear old cell contents.*/
-  avm_memcellClear(lv);
-  /*In C++ dispatch instead.*/
-  memcpy(lv,rv,sizeof(avm_memcell));
-
-  /*Now take care of copied values or reference counting*/
-  if(lv->type==string_m){
-    lv->data.strVal=strdup(rv->data.strVal);
-  }
-  else if(lv->type==table_m){
-    avm_tableincrefcounter(lv->data.tableVal);
+    arithmetic_func_t op=arithmeticFuncs[instr->opcode-add_v];
+    avm_memcellClear(lv);
+    lv->type=number_m;
+    lv->data.numVal=(*op)(rv1->data.numVal,rv2->data.numVal);
   }
 }
 
@@ -320,7 +212,7 @@ extern void execute_assign(instruction* instr){
   avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
   avm_memcell* rv=avm_translate_operand(instr->arg1,&ax);
 
-//  assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
+  assert(lv && (&vm_stack[N-1] >= lv && lv>&vm_stack[top] || lv==&retval));
   //assert(rv);//should do similar assertion tests here
 
   avm_assign(lv,rv);
@@ -415,7 +307,6 @@ extern void execute_call(instruction* instr){
 }
 
 ///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
 extern void execute_pusharg(instruction* instr){
   avm_memcell* arg=avm_translate_operand(instr->arg1,&ax);
   assert(arg);
@@ -478,7 +369,7 @@ extern void execute_tablegetelem(instruction* instr){
   lv->type=nil_m;   /*Default value.*/
 
   if(t->type!=table_m){
-    //avm_error("illegal use of type &s as table!", typeStrings[t->type]);
+    avm_error("illegal use of type &s as table!",typeStrings[t->type],NULL,0);
   }
   else{
     avm_memcell* content=avm_tableGetelem(t->data.tableVal, i);
@@ -488,7 +379,7 @@ extern void execute_tablegetelem(instruction* instr){
     else{
       char* ts=avm_tostring(t);
       char* is=avm_tostring(i);
-      //avm_warning("%s[%s] not found!",ts,is);
+      avm_warning("%s[%s] not found!",ts,is);
       free(ts);
       free(is);
     }
@@ -518,8 +409,116 @@ extern void execute_nop(instruction* instr){
 }
 
 ///////////////////////////////////////////////////////
+                //MEM_CLEAR
 ///////////////////////////////////////////////////////
+void avm_memcellClear(avm_memcell* m){
+  if(m->type!=undef_m){
+    memclear_func_t f=memclearFuncs[m->type];
+    if(f){
+      (*f)(m);
+    }
+    m->type=undef_m;
+  }
+}
+///////////////////////////////////////////////////////
+extern void memclear_string(avm_memcell* m){
+  assert(m->data.strVal);
+  free(m->data.strVal);
+}
 
+///////////////////////////////////////////////////////
+extern void memclear_table(avm_memcell* m){
+  assert(m->data.tableVal);
+  avm_tabledecrefcounter(m->data.tableVal);
+}
+
+
+///////////////////////////////////////////////////////
+void avm_calllibfunc(char* id){
+  libfunc_t f=avm_getlibraryfunc(id);
+  if(!f){
+    avm_error("unsupported lib func 's' called!",id,NULL,0);
+    executionFinished=1;
+  }
+  else{
+    topsp=top;
+    totalActuals=0;
+    (*f)();
+    if(!executionFinished){
+      execute_funcexit((instruction*)0);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////
+extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
+  /*Same cells? destructive to assign!*/
+  if(lv==rv){
+    return;
+  }
+  /*Same tables?No need to assign!*/
+  if(lv->type==table_m && rv->type==table_m && lv->data.tableVal==rv->data.tableVal){
+    return;
+  }
+  /*From undefined r-value?warning*/
+  if(rv->type==undef_m){
+    avm_warning("assigning from 'undef' content!",NULL,NULL);
+  }
+
+  /*Clear old cell contents.*/
+  avm_memcellClear(lv);
+  /*In C++ dispatch instead.*/
+  memcpy(lv,rv,sizeof(avm_memcell));
+
+  /*Now take care of copied values or reference counting*/
+  if(lv->type==string_m){
+    lv->data.strVal=strdup(rv->data.strVal);
+  }
+  else if(lv->type==table_m){
+    avm_tableincrefcounter(lv->data.tableVal);
+  }
+}
+
+///////////////////////////////////////////////////////
+void avm_tableDestroy(avm_table* t){
+  avm_tableBucketsDestroy(t->strIndexed);
+  avm_tableBucketsDestroy(t->numIndexed);
+  free(t);
+}
+
+///////////////////////////////////////////////////////
+void avm_tableBucketsDestroy(avm_table_bucket** p){
+  for(unsigned i=0; i<AVM_TABLE_HASHSIZE; ++i, ++p){
+    for(avm_table_bucket* b=*p; b;){
+      avm_table_bucket* del=b;
+      b=b->next;
+      avm_memcellClear(&del->key);
+      avm_memcellClear(&del->value);
+      free(del);
+    }
+    p[i]=(avm_table_bucket*) 0;
+  }
+}
+
+///////////////////////////////////////////////////////
+void avm_tableincrefcounter(avm_table* t){
+  ++t->refCounter;
+}
+
+///////////////////////////////////////////////////////
+void avm_tabledecrefcounter(avm_table* t){
+  assert(t->refCounter>0);
+  if(!--t->refCounter){
+    avm_tableDestroy(t);
+  }
+}
+
+///////////////////////////////////////////////////////
+void avm_tablebucketsInit(avm_table_bucket** p){
+  for(unsigned i=0; i<AVM_TABLE_HASHSIZE; ++i){
+    p[i]=(avm_table_bucket*)0;
+  }
+}
 
 ///////////////////////////////////////////////////////
 void avm_dec_top(){
@@ -557,10 +556,18 @@ unsigned avm_get_envvalue(unsigned i){
 }
 
 ///////////////////////////////////////////////////////
-library_func_t avm_getlibraryfunc(char* id){
-
+unsigned avm_totalactuals(){
+  return avm_get_envvalue(topsp+AVM_NUMACTUALS_OFFSET);
 }
 
+///////////////////////////////////////////////////////
+avm_memcell* avm_getactual(unsigned i){
+  assert(i<avm_totalactuals());
+  return &vm_stack[topsp+AVM_STACKENV_SIZE+1+i];
+}
+
+///////////////////////////////////////////////////////
+                //TO BOOLS
 ///////////////////////////////////////////////////////
 unsigned char number_tobool(avm_memcell* m){
   return m->data.numVal != 0;
@@ -609,59 +616,20 @@ unsigned char avm_tobool(avm_memcell* m){
 }
 
 ///////////////////////////////////////////////////////
-
-
+              //LIBRARY FUNCS
 ///////////////////////////////////////////////////////
 
-
-///////////////////////////////////////////////////////
-unsigned avm_totalactuals(){
-  return avm_get_envvalue(topsp+AVM_NUMACTUALS_OFFSET);
-}
-
-///////////////////////////////////////////////////////
-avm_memcell* avm_getactual(unsigned i){
-  assert(i<avm_totalactuals());
-  return &vm_stack[topsp+AVM_STACKENV_SIZE+1+i];
-}
-
-///////////////////////////////////////////////////////
 /*With the following every library function is manually
   added in the VM library function resolution map.
 */
-void avm_registerlibfunc(char* id,library_func_t addr){
+void avm_registerlibfunc(char* id,libfunc_t addr){
 
 }
 
 ///////////////////////////////////////////////////////
-char* avm_tostring(avm_memcell* m){
-  assert(m->type>=0 && m->type<=undef_m);
-  return (*tostringFuncs[m->type])(m);
-}
-
-///////////////////////////////////////////////////////
-extern char* number_tostring(avm_memcell* m){
+libfunc_t avm_getlibraryfunc(char* id){
 
 }
-
-///////////////////////////////////////////////////////
-extern char* string_tostring(avm_memcell* m){
-
-}
-
-///////////////////////////////////////////////////////
-extern char* bool_tostring(avm_memcell* m){
-
-}
-
-///////////////////////////////////////////////////////
-extern char* table_tostring(avm_memcell* m){
-
-}
-
-
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////
 void avm_initialize(){
@@ -701,7 +669,7 @@ void libfunc_typeof(){
   else{
     avm_memcellClear(&retval); //dont forget to clean it up
     retval.type=string_m;
-    //retval.data.strVal=strdup(typeStrings[avm_getactual()]);
+    retval.data.strVal=strdup(typeStrings[avm_getactual(0)->type]);
   }
 }
 
@@ -758,9 +726,14 @@ void libfunc_cos(){
 void libfunc_sin(){
 
 }
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////
+                //TO_STRINGS
+///////////////////////////////////////////////////////
+char* avm_tostring(avm_memcell* m){
+  assert(m->type>=0 && m->type<=undef_m);
+  return (*tostringFuncs[m->type])(m);
+}
 
 ///////////////////////////////////////////////////////
 extern char* userfunc_tostring(avm_memcell* m){
@@ -782,6 +755,27 @@ extern char* libfunc_tostring(avm_memcell* m){
 
 }
 
+///////////////////////////////////////////////////////
+extern char* number_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* string_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* bool_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
+extern char* table_tostring(avm_memcell* m){
+
+}
+
+///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 double add_impl(double x,double y){return x+y;}
 
@@ -806,26 +800,6 @@ double mod_impl(double x,double y){
 }
 
 ///////////////////////////////////////////////////////
-void execute_arithmetic(instruction* instr){
-  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
-  avm_memcell* rv1=avm_translate_operand(instr->arg1,&ax);
-  avm_memcell* rv2=avm_translate_operand(instr->arg2,&bx);
-
-  //assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
-  assert(rv1 && rv2);
-
-  if(rv1->type != number_a || rv2->type != number_a){
-    //avm_error("not a number in arithmetic!"); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    executionFinished=1;
-  }
-  else{
-    arithmetic_func_t op=arithmeticFuncs[instr->opcode-add_v];
-    avm_memcellClear(lv);
-    lv->type=number_m;
-    lv->data.numVal=(*op)(rv1->data.numVal,rv2->data.numVal);
-  }
-}
-
 ///////////////////////////////////////////////////////
 avm_table* avm_tableNew(){
 
@@ -842,4 +816,226 @@ avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index){
 void avm_tablesetElem(avm_table* table,avm_memcell* index,avm_memcell* content){
 
 
+}
+
+///////////////////////////////////////////////////////
+//PINAKES CONSTS PHASE 4
+///////////////////////////////////////////////////////
+double consts_getnumber(unsigned index){
+
+}
+
+///////////////////////////////////////////////////////
+char* const_getstring(unsigned index){
+
+}
+
+///////////////////////////////////////////////////////
+char* libfuncs_getused(unsigned index){
+
+}
+
+///////////////////////////////////////////////////////
+//ERRORS
+///////////////////////////////////////////////////////
+extern void avm_warning(char* format,char* c1,char* c2){
+
+}
+
+///////////////////////////////////////////////////////
+extern void avm_error(char* format,char* name,char* name2,unsigned n){
+
+}
+
+///////////////////////////////////////////////////////
+//READ BINARY
+void Read_froms_Binary(){
+
+  FILE* file2;
+
+  file2=fopen("output","rb");
+
+  if(file2!=NULL){
+
+    struct instruction ins;
+    struct userFunc us;
+    struct strings lb;
+    struct strings st;
+    double n;
+    int z=0;
+    int t=currInstr+curr_nums+curr_funcs+curr_strings+curr_lib_funcs;
+
+    instruction*  temp_code=code;
+    userFunc* temp_user_func2=user_funcs2;
+    strings* temp_lib_func2=lib_funcs2;
+    strings* temp_strings2=string_consts2;
+    double* temp_numbers2=numbers2;
+
+    fprintf(GOUT,"\n######################################################################################################################################\n\n");
+
+    while(z<t){
+      //instructions talbe
+      if(z<currInstr){
+        fread(&ins,sizeof(struct instruction),1,file2);
+        emit_ins2(&ins);
+        temp_code=code+(currCode-1);
+        fprintf(GOUT,"Opcode in memory:         %d\n",temp_code->opcode);
+      }
+      //numbers
+      else if(z<currInstr+curr_nums){
+        fread(&n,sizeof(double),1,file2);
+        consts_newnumber2(n);
+        temp_numbers2=numbers2+(curr_nums2-1);
+        fprintf(GOUT,"Const numbers in memory:  %f\n",*temp_numbers2);
+      }
+      //lib_funcs
+      else if(z<currInstr+curr_nums+curr_lib_funcs){
+        fread(&lb,sizeof(struct strings),1,file2);
+        libfuncs_newused2(lb.string);
+        temp_lib_func2=lib_funcs2+(curr_lib_funcs2-1);
+        fprintf(GOUT,"Lib funcs in memory:      %s\n",temp_lib_func2->string);
+      }
+      //user_funcs
+      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs){
+        fread(&us,sizeof(struct userFunc),1,file2);
+        userfuncs_newfunc2(&us);
+        temp_user_func2=user_funcs2+(curr_funcs2-1);
+        fprintf(GOUT,"User funcs in memory:     %d\n",temp_user_func2->address);
+      }
+      //strings
+      else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs+curr_strings){
+        fread(&st,sizeof(struct strings),1,file2);
+        consts_newstring2(st.string);
+        temp_strings2=string_consts2+(curr_strings2-1);
+        fprintf(GOUT,"Const strings in memory:  %s\n",temp_strings2->string);
+      }
+      z++;
+    }
+    fprintf(GOUT,"\n######################################################################################################################################\n\n");
+    fclose(file2);
+  }
+}
+
+///////////////////////////////////////////////////////
+void expand3(){
+  assert(codeSize == currCode);
+  instruction* ins=(instruction*)malloc(NEW_SIZE2);
+  if(code){
+    memcpy(ins,code,CURR_SIZE2);
+    free(code);
+  }
+  code=ins;
+  codeSize=codeSize+EXPAND_SIZE2;
+}
+
+///////////////////////////////////////////////////////
+void emit_ins2(instruction* instr){
+  if(currCode == codeSize){
+    expand3();
+  }
+  instruction* temp;
+  temp=code+currCode;
+  temp->opcode=instr->opcode;
+  temp->arg1=instr->arg1;
+  temp->arg2=instr->arg2;
+  temp->result=instr->result;
+  temp->srcLine=instr->srcLine;
+  currCode++;
+}
+
+///////////////////////////////////////////////////////
+unsigned consts_newstring2(char* s){
+
+  if(curr_strings2 == total_strings2){
+    expand_tables2(2);
+  }
+  strings* new_string;
+  new_string=string_consts2+curr_strings2;
+  new_string->string=s;
+  curr_strings2++;
+}
+
+///////////////////////////////////////////////////////
+unsigned consts_newnumber2(double n){
+  if(curr_nums2 == total_nums2){
+    expand_tables2(3);
+  }
+  double* new_num;
+  new_num=numbers2+curr_nums2;
+  *new_num=n;
+  curr_nums2++;
+}
+
+///////////////////////////////////////////////////////
+unsigned libfuncs_newused2(char* s){
+
+  if(curr_lib_funcs2 == total_lib_funcs2){
+    expand_tables2(1);
+  }
+  strings* new_lib;
+  new_lib=lib_funcs2+curr_lib_funcs2;
+  new_lib->string=s;
+  curr_lib_funcs2++;
+}
+
+///////////////////////////////////////////////////////
+unsigned userfuncs_newfunc2(userFunc* sym){
+
+  if(curr_funcs2 == total_funcs2){
+    expand_tables2(0);
+  }
+  struct userFunc *new_func;
+  new_func=user_funcs2+curr_funcs2;
+  new_func->address=sym->address;
+  new_func->id=sym->id;
+  new_func->localSize=sym->localSize;
+  curr_funcs2++;
+}
+
+///////////////////////////////////////////////////////
+void expand_tables2(int i){
+  if(i==0){
+    assert(total_funcs2 == curr_funcs2);
+    userFunc* funcs=(userFunc*)malloc(NEW_SIZE2);
+    if(user_funcs2){
+      memcpy(funcs,user_funcs2,CURR_SIZE2);
+      free(user_funcs2);
+    }
+    user_funcs2=funcs;
+    total_funcs2=total_funcs2+EXPAND_SIZE2;
+  }
+  else if(i==1){
+    assert(total_lib_funcs2 == curr_lib_funcs2);
+    strings* libs=(strings*)malloc(NEW_SIZE2);
+    if(lib_funcs2){
+      memcpy(libs,lib_funcs2,CURR_SIZE2);
+      free(lib_funcs2);
+    }
+    lib_funcs2=libs;
+    total_lib_funcs2=total_lib_funcs2+EXPAND_SIZE2;
+  }
+  else if(i==2){
+    assert(total_strings2 == curr_strings2);
+    strings* strings0=(strings*)malloc(NEW_SIZE2);
+    if(string_consts2){
+      memcpy(strings0,string_consts2,CURR_SIZE2);
+      free(string_consts2);
+    }
+    string_consts2=strings0;
+    total_strings2=total_strings2+EXPAND_SIZE2;
+  }
+  else if(i==3){
+    assert(total_nums2 == curr_nums2);
+    double* nums=(double*)malloc(NEW_SIZE2);
+    if(numbers2){
+      memcpy(nums,numbers2,CURR_SIZE2);
+      free(numbers2);
+    }
+    numbers2=nums;
+    total_nums2=total_nums2+EXPAND_SIZE2;
+  }
+  else{
+    fprintf(GOUT,"give right input noob!!!\n");
+    assert(0);
+  }
 }
