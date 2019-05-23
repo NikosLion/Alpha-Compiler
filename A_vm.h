@@ -67,7 +67,7 @@ typedef struct avm_table{
 
 avm_memcell vm_stack[AVM_STACKSIZE];
 typedef void (*memclear_func_t)(avm_memcell*);
-typedef void (*execute_func_t)(instruction*);
+typedef void (*execute_func_t)(*instruction);
 typedef void (*libfunc_t)();
 libfunc_t avm_getlibraryfunc(char* id); //typical hashing
 
