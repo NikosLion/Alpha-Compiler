@@ -377,7 +377,7 @@ void patch_incomplete_jumps(){
   j_temp=ij_head;
   while(j_temp!=NULL){
     if(j_temp->iaddress==currQuad){
-      ((instructions+j_temp->instrNo)->result->val)=currInstr;
+      ((instructions+j_temp->instrNo)->result->val)=currInstr-1;
     }
     else{
       ((instructions+j_temp->instrNo)->result->val)=((getQuads()+j_temp->iaddress)->taddress);

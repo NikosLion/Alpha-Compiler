@@ -611,6 +611,7 @@ void avm_registerlibfunc(char* id,libfunc_t addr){
 ///////////////////////////////////////////////////////
 libfunc_t avm_getlibraryfunc(char* id){
   if(strcmp(id,"print")==0){
+
     (*lib_funcs_table[0])();
   }
   else if(strcmp(id,"typeof")==0){
@@ -903,7 +904,7 @@ void Read_froms_Binary(){
 
     fprintf(GOUT,"\n######################################################################################################################################\n\n");
 
-    while(z<t){
+    while(z<t-1){
       //instructions talbe
       if(z<currInstr){
         fread(&ins,sizeof(struct instruction),1,file2);

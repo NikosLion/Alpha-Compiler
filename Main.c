@@ -53,7 +53,7 @@ int main(int argc, char **argv){
   avm_initStack();
   setGlobmem();
 
-  execute_cycle();
+  //execute_cycle();
 
   fclose(yyin);
 
