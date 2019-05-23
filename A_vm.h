@@ -165,17 +165,17 @@ unsigned char nil_tobool(avm_memcell* m);
 unsigned char undef_tobool(avm_memcell* m);
 unsigned char avm_tobool(avm_memcell* m);
 //////////////////////////////////////////////////////
-void libfunc_print();
-void libfunc_typeof();
-void libfunc_input();
-void libfunc_objectmemberkeys();
-void libfunc_objectcopy();
-void libfunc_totalarguments();
-void libfunc_argument();
-void libfunc_strtonum();
-void libfunc_sqrt();
-void libfunc_cos();
-void libfunc_sin();
+extern void libfunc_print();
+extern void libfunc_typeof();
+extern void libfunc_input();
+extern void libfunc_objectmemberkeys();
+extern void libfunc_objectcopy();
+extern void libfunc_totalarguments();
+extern void libfunc_argument();
+extern void libfunc_strtonum();
+extern void libfunc_sqrt();
+extern void libfunc_cos();
+extern void libfunc_sin();
 //////////////////////////////////////////////////////
 void avm_initialize();
 void libfunc_totalarguments();
