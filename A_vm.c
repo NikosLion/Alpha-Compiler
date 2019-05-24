@@ -125,7 +125,7 @@ void avm_initStack(){
 void avm_dec_top(){
   //stack overflow
   if(!top){
-    avm_error("stack overflow",NULL,NULL,0);
+    avm_error("stack overflow",NULL,NULL,-1);
     executionFinished=1;
   }
   else{
@@ -206,27 +206,6 @@ void execute_cycle(){
 }
 
 ///////////////////////////////////////////////////////
-void execute_arithmetic(instruction* instr){
-  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
-  avm_memcell* rv1=avm_translate_operand(instr->arg1,&ax);
-  avm_memcell* rv2=avm_translate_operand(instr->arg2,&bx);
-
-  assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
-  assert(rv1 && rv2);
-
-  if(rv1->type != number_a || rv2->type != number_a){
-    avm_error("not a number in arithmetic!",NULL,NULL,0);
-    executionFinished=1;
-  }
-  else{
-    arithmetic_func_t op=arithmeticFuncs[instr->opcode-add_v];
-    avm_memcellClear(lv);
-    lv->type=number_m;
-    lv->data.numVal=(*op)(rv1->data.numVal,rv2->data.numVal);
-  }
-}
-
-///////////////////////////////////////////////////////
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv){
   /*Same cells? destructive to assign!*/
   if(lv==rv){
@@ -280,7 +259,7 @@ extern void execute_jeq(instruction* instr){
   unsigned char result = 0;
 
   if(rv1->type == undef_m || rv2->type == undef_m){
-    avm_error("'undef' involved in equality!",NULL,NULL,0);
+    avm_error("'undef' involved in equality!",NULL,NULL,-1);
   }
   else if(rv1->type==nil_m || rv2->type==nil_m){
     result=(rv1->type==nil_m && rv2->type==nil_m);
@@ -289,7 +268,7 @@ extern void execute_jeq(instruction* instr){
     result=(avm_tobool(rv1)==avm_tobool(rv2));
   }
   else if(rv1->type !=rv2->type){
-    avm_error("'%s'=='%s' is illegal!",typeStrings[rv1->type],typeStrings[rv2->type],0);
+    avm_error("'%s'=='%s' is illegal!",typeStrings[rv1->type],typeStrings[rv2->type],-1);
   }
   else{
 
@@ -347,7 +326,7 @@ extern void execute_call(instruction* instr){
     }
     default: {
       char *s=avm_tostring(func);
-      avm_error("call:cannot bind '%s' to function!",s,NULL,0);
+      avm_error("call:cannot bind '%s' to function!",s,NULL,-1);
       free(s);
       executionFinished=1;
     }
@@ -376,7 +355,11 @@ extern void execute_funcenter(instruction* instr){
   //calle actions here
   totalActuals=0;
   topsp=top;
-//  top=top-funcInfo->localSize;
+  int i=0;
+  while(instr->result->val != user_funcs2[i].address){
+    i++;
+  }
+  top=top-user_funcs2[i].localSize;
 }
 
 ///////////////////////////////////////////////////////
@@ -417,7 +400,7 @@ extern void execute_tablegetelem(instruction* instr){
   lv->type=nil_m;   /*Default value.*/
 
   if(t->type!=table_m){
-    avm_error("illegal use of type &s as table!",typeStrings[t->type],NULL,0);
+    avm_error("illegal use of type &s as table!",typeStrings[t->type],NULL,-1);
   }
   else{
     avm_memcell* content=avm_tableGetelem(t->data.tableVal, i);
@@ -444,7 +427,7 @@ extern void execute_tablesetelem(instruction* instr){
   assert(i && c);
 
   if(t->type != table_m){
-    avm_error("illegal use of type '%s' as table",typeStrings[t->type],NULL,0);
+    avm_error("illegal use of type '%s' as table",typeStrings[t->type],NULL,-1);
   }
   else{
     avm_tablesetElem(t->data.tableVal,i,c);
@@ -597,6 +580,7 @@ unsigned char avm_tobool(avm_memcell* m){
   return (*toboolFuncs[m->type])(m);
 }
 
+
 ///////////////////////////////////////////////////////
               //LIBRARY FUNCS
 ///////////////////////////////////////////////////////
@@ -665,7 +649,7 @@ void avm_initialize(){
 void avm_calllibfunc(char* id){
   libfunc_t f=avm_getlibraryfunc(id);
   if(!f){
-    avm_error("unsupported lib func 's' called!",id,NULL,0);
+    avm_error("unsupported lib func 's' called!",id,NULL,-1);
     executionFinished=1;
   }
   else{
@@ -725,7 +709,7 @@ void libfunc_totalarguments(){
   avm_memcellClear(&retval);
 
   if(!p_topsp){
-    avm_error("'totalarguments' called outside a function!",NULL,NULL,0);
+    avm_error("'totalarguments' called outside a function!",NULL,NULL,-1);
     retval.type=nil_m;
   }
   else{
@@ -768,45 +752,79 @@ char* avm_tostring(avm_memcell* m){
 
 ///////////////////////////////////////////////////////
 extern char* userfunc_tostring(avm_memcell* m){
-
+  char sfasi[128];
+  char* ret;
+  sprintf(sfasi,"%d",m->data.funcVal);
+  ret=sfasi;
+  return ret;
 }
 
 ///////////////////////////////////////////////////////
 extern char* nil_tostring(avm_memcell* m){
-
+  return "null";
 }
 
 ///////////////////////////////////////////////////////
 extern char* undef_tostring(avm_memcell* m){
-
+  return "undefined";
 }
 
 ///////////////////////////////////////////////////////
 extern char* libfunc_tostring(avm_memcell* m){
-
+  return m->data.libfuncVal;
 }
 
 ///////////////////////////////////////////////////////
 extern char* number_tostring(avm_memcell* m){
-
+  char sfasi[128];
+  char* ret;
+  sprintf(sfasi,"%f",m->data.numVal);
+  ret=sfasi;
+  return ret;
 }
 
 ///////////////////////////////////////////////////////
 extern char* string_tostring(avm_memcell* m){
-
+  return m->data.strVal;
 }
 
 ///////////////////////////////////////////////////////
 extern char* bool_tostring(avm_memcell* m){
-
+  char sfasi[5];
+  char* ret;
+  sprintf(sfasi,"%d",m->data.boolVal);
+  ret=sfasi;
+  return ret;
 }
 
 ///////////////////////////////////////////////////////
 extern char* table_tostring(avm_memcell* m){
-
+    //na to doume
 }
 
 ///////////////////////////////////////////////////////
+                  //ARITHMETIC
+///////////////////////////////////////////////////////
+void execute_arithmetic(instruction* instr){
+  avm_memcell* lv=avm_translate_operand(instr->result,(avm_memcell*) 0);
+  avm_memcell* rv1=avm_translate_operand(instr->arg1,&ax);
+  avm_memcell* rv2=avm_translate_operand(instr->arg2,&bx);
+
+  assert(lv && (&vm_stack[N-1]>=lv && lv>&vm_stack[top] || lv==&retval));
+  assert(rv1 && rv2);
+
+  if(rv1->type != number_a || rv2->type != number_a){
+    avm_error("not a number in arithmetic!",NULL,NULL,-1);
+    executionFinished=1;
+  }
+  else{
+    arithmetic_func_t op=arithmeticFuncs[instr->opcode-add_v];
+    avm_memcellClear(lv);
+    lv->type=number_m;
+    lv->data.numVal=(*op)(rv1->data.numVal,rv2->data.numVal);
+  }
+}
+
 ///////////////////////////////////////////////////////
 double add_impl(double x,double y){return x+y;}
 
@@ -830,56 +848,148 @@ double mod_impl(double x,double y){
   }
 }
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-avm_table* avm_tableNew(){
-
-
-}
 
 ///////////////////////////////////////////////////////
-avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index){
-
-
-}
+                //TABLES
+///////////////////////////////////////////////////////
+avm_table* avm_tableNew(){}
 
 ///////////////////////////////////////////////////////
-void avm_tablesetElem(avm_table* table,avm_memcell* index,avm_memcell* content){
-
-
-}
+avm_memcell* avm_tableGetelem(avm_table* table,avm_memcell* index){}
 
 ///////////////////////////////////////////////////////
-//PINAKES CONSTS PHASE 4
+void avm_tablesetElem(avm_table* table,avm_memcell* index,avm_memcell* content){}
+
+
+///////////////////////////////////////////////////////
+            //PINAKES CONSTS PHASE 4
 ///////////////////////////////////////////////////////
 double consts_getnumber(unsigned index){
-
+  return numbers2[index];
 }
 
 ///////////////////////////////////////////////////////
 char* const_getstring(unsigned index){
-
+  return string_consts2[index].string;
 }
 
 ///////////////////////////////////////////////////////
 char* libfuncs_getused(unsigned index){
-
+  return lib_funcs2[index].string;
 }
 
 ///////////////////////////////////////////////////////
-//ERRORS
+              //WARNINGS-ERRORS
 ///////////////////////////////////////////////////////
 extern void avm_warning(char* format,char* c1,char* c2){
+  char ch0[256];
+  char ch1[256];
+  int i=0;
+  int j=0;
+  int k=0;
 
+  if(c1!=NULL && c2==NULL){
+    while(format[i]!='%'){
+      ch0[i]=format[i];
+      i++;
+    }
+    strcat(ch0,c1);
+    j=j+strlen(ch0);
+    i=i+2;
+    while(format[i]!='\0'){
+      ch0[j]=format[i];
+      i++;
+      j++;
+    }
+    fprintf(GOUT,"%s\n",ch0);
+  }
+  else if(c1!=NULL && c2!=NULL){
+    while(format[i]!='%'){
+      ch0[i]=format[i];
+      i++;
+    }
+    strcat(ch0,c1);
+    j=j+strlen(ch0);
+    i=i+2;
+    while(format[i]!='%'){
+      ch1[k]=format[i];
+      i++;
+      k++;
+    }
+    strcat(ch1,c2);
+    strcat(ch0,ch1);
+    fprintf(GOUT,"%s\n",ch0);
+  }
+  else{
+    fprintf(GOUT,"%s\n",format);
+  }
 }
 
 ///////////////////////////////////////////////////////
-extern void avm_error(char* format,char* name,char* name2,unsigned n){
+extern void avm_error(char* format,char* c1,char* c2,int n){
+  char ch0[256];
+  char ch1[256];
+  int i=0;
+  int j=0;
+  int k=0;
 
+  if(n==-1){
+
+    if(c1!=NULL && c2==NULL){
+      while(format[i]!='%'){
+        ch0[i]=format[i];
+        i++;
+      }
+      strcat(ch0,c1);
+      j=j+strlen(ch0);
+      i=i+2;
+      while(format[i]!='\0'){
+        ch0[j]=format[i];
+        i++;
+        j++;
+      }
+      fprintf(GOUT,"%s\n",ch0);
+    }
+    else if(c1!=NULL && c2!=NULL){
+      while(format[i]!='%'){
+        ch0[i]=format[i];
+        i++;
+      }
+      strcat(ch0,c1);
+      j=j+strlen(ch0);
+      i=i+2;
+      while(format[i]!='%'){
+        ch1[k]=format[i];
+        i++;
+        k++;
+      }
+      strcat(ch1,c2);
+      strcat(ch0,ch1);
+      fprintf(GOUT,"%s\n",ch0);
+    }
+    else{
+      fprintf(GOUT,"%s\n",format);
+    }
+  }
+  else{
+    while(format[i]!='%'){
+      ch0[i]=format[i];
+      i++;
+    }
+    fprintf(GOUT,"%s%d",ch0,n);
+    i=i+2;
+    while(format[i]!='\0'){
+      ch1[j]=format[i];
+      i++;
+      j++;
+    }
+    fprintf(GOUT,"%s\n",ch1);
+  }
 }
 
 ///////////////////////////////////////////////////////
-//READ BINARY
+                //READ BINARY
+///////////////////////////////////////////////////////
 void Read_froms_Binary(){
 
   FILE* file2;
@@ -904,41 +1014,41 @@ void Read_froms_Binary(){
 
     fprintf(GOUT,"\n######################################################################################################################################\n\n");
 
-    while(z<t-1){
+    while(z<t){
       //instructions talbe
       if(z<currInstr){
         fread(&ins,sizeof(struct instruction),1,file2);
         emit_ins2(&ins);
         temp_code=code+(currCode-1);
-        fprintf(GOUT,"Opcode in memory:         %d\n",temp_code->opcode);
+        fprintf(GOUT,"Opcode in memory:             %d\n",temp_code->opcode);
       }
       //numbers
       else if(z<currInstr+curr_nums){
         fread(&n,sizeof(double),1,file2);
         consts_newnumber2(n);
         temp_numbers2=numbers2+(curr_nums2-1);
-        fprintf(GOUT,"Const numbers in memory:  %f\n",*temp_numbers2);
+        fprintf(GOUT,"Const numbers in memory:      %f\n",*temp_numbers2);
       }
       //lib_funcs
       else if(z<currInstr+curr_nums+curr_lib_funcs){
         fread(&lb,sizeof(struct strings),1,file2);
         libfuncs_newused2(lb.string);
         temp_lib_func2=lib_funcs2+(curr_lib_funcs2-1);
-        fprintf(GOUT,"Lib funcs in memory:      %s\n",temp_lib_func2->string);
+        fprintf(GOUT,"Lib funcs in memory:          %s\n",temp_lib_func2->string);
       }
       //user_funcs
       else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs){
         fread(&us,sizeof(struct userFunc),1,file2);
         userfuncs_newfunc2(&us);
         temp_user_func2=user_funcs2+(curr_funcs2-1);
-        fprintf(GOUT,"User funcs in memory:     %d\n",temp_user_func2->address);
+        fprintf(GOUT,"User funcs address in memory: %d\n",temp_user_func2->address);
       }
       //strings
       else if(z<currInstr+curr_nums+curr_lib_funcs+curr_funcs+curr_strings){
         fread(&st,sizeof(struct strings),1,file2);
         consts_newstring2(st.string);
         temp_strings2=string_consts2+(curr_strings2-1);
-        fprintf(GOUT,"Const strings in memory:  %s\n",temp_strings2->string);
+        fprintf(GOUT,"Const strings in memory:      %s\n",temp_strings2->string);
       }
       z++;
     }
@@ -1071,6 +1181,8 @@ void expand_tables2(int i){
   }
 }
 
+///////////////////////////////////////////////////////
+//init space for global scope space vars to vm_stack
 ///////////////////////////////////////////////////////
 void setGlobmem(){
   struct SymbolTableEntry *temp=getHead();

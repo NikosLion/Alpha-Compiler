@@ -95,7 +95,7 @@ extern void memclear_table(avm_memcell* m);
 void execute_cycle();
 
 extern void avm_warning(char*,char*,char*);
-extern void avm_error(char* format,char* name,char* name2,unsigned n);
+extern void avm_error(char* format,char* name,char* name2,int n);
 extern void avm_calllibfunc(char* funcName);
 extern void avm_assign(avm_memcell* lv,avm_memcell* rv);
 

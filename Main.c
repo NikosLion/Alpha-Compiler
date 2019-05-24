@@ -28,7 +28,7 @@ int main(int argc, char **argv){
 		    GOUT = ofp;
 	  }
 	  else{
-		    fprintf(stderr, "Can't open output file %s!\n", argv[2]);
+		    fprintf(stderr, "Can't open output file %s!\n",argv[2]);
 		    return(1);
 	  }
   }else{
@@ -46,7 +46,7 @@ int main(int argc, char **argv){
   call_generators();
   patch_incomplete_jumps();
   print_instructions_table(GOUT);
-
+  
   convert_to_binary();
   Read_froms_Binary();
 
