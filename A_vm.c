@@ -9,7 +9,6 @@ unsigned char executionFinished=0;
 unsigned      pc=0;
 unsigned      currLine=0;
 unsigned      codeSize=0;
-unsigned      currCode=0;
 unsigned      globmem=0;
 unsigned      globmem_end=0;
 
@@ -52,6 +51,7 @@ execute_func_t excecuteFuncs[]={
   execute_newtable,
   execute_tablegetelem,
   execute_tablesetelem,
+  execute_jump,
   execute_nop
 };
 
@@ -435,6 +435,11 @@ extern void execute_tablesetelem(instruction* instr){
 }
 
 ///////////////////////////////////////////////////////
+extern void execute_jump(instruction* instr){
+
+}
+
+///////////////////////////////////////////////////////
 extern void execute_nop(instruction* instr){
   executionFinished=1;
 }
@@ -730,16 +735,22 @@ void libfunc_strtonum(){
 
 ///////////////////////////////////////////////////////
 void libfunc_sqrt(){
-
+  double x=avm_getactual(0)->data.numVal;
+  if(x<0){
+    fprintf(GOUT,"nil\n");
+  }
+  else{
+    fprintf(GOUT,"%f\n",sqrt(x));
+  }
 }
 ///////////////////////////////////////////////////////
 void libfunc_cos(){
-
+  fprintf(GOUT,"%f\n",cos(avm_getactual(0)->data.numVal));
 }
 
 ///////////////////////////////////////////////////////
 void libfunc_sin(){
-
+    fprintf(GOUT,"%f\n",sin(avm_getactual(0)->data.numVal));
 }
 
 ///////////////////////////////////////////////////////

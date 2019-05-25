@@ -11,6 +11,7 @@ int main(int argc, char **argv){
   functionLocalOffset=0;
   formalArgOffset=0;
   scopeSpaceCounter=1;
+  int code_instr=0;
 
   FILE *ifp, *ofp;
   ifp = fopen(argv[1], "r");
@@ -46,14 +47,18 @@ int main(int argc, char **argv){
   call_generators();
   patch_incomplete_jumps();
   print_instructions_table(GOUT);
-  
+
   convert_to_binary();
   Read_froms_Binary();
 
   avm_initStack();
   setGlobmem();
 
-  //execute_cycle();
+  /*while(code_instr<currCode){
+    execute_cycle();
+    code_instr++;
+  }*/
+
 
   fclose(yyin);
 

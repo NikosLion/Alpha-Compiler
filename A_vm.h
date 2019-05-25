@@ -1,4 +1,6 @@
+#include <math.h>
 #include "Vm_args.h"
+
 
 #define AVM_STACKSIZE 4096
 #define N 4096
@@ -29,6 +31,8 @@ unsigned curr_funcs2;
 unsigned curr_lib_funcs2;
 unsigned curr_strings2;
 unsigned curr_nums2;
+
+unsigned      currCode;
 
 
 enum avm_memcell_t{
@@ -120,6 +124,7 @@ extern void execute_funcexit(instruction*);
 extern void execute_newtable(instruction*);
 extern void execute_tablegetelem(instruction*);
 extern void execute_tablesetelem(instruction*);
+extern void execute_jump(instruction*);
 extern void execute_nop(instruction*);
 ///////////////////////////////////////////////////////
 
