@@ -11,8 +11,8 @@ generator). A symbol table which we implemented in C (programming language) was 
 tokens of the Alpha language during these two initial phases.
 The third phase consists of the production of intermediate code (3-address code or QUADS) which are
 stored in an array.
-In the fourth phase, byte code is produced through the QUADS and the binary file for the final execution of 
-the user's code is generated.
+In the fourth phase, byte code is produced through the QUADS and a binary file is generated for the final
+execution of the user's code.
 The fifth and final phase is the implementation of the AVM (Alpha Virtual Machine) which loads and executes
 the binary file.
 
